@@ -30,7 +30,11 @@ SOURCES += \
     global.cpp \
     network/websocketclient.cpp \
     network/websocketserver.cpp \
-    configure.cpp
+    configure.cpp \
+    ui/widgettypea.cpp \
+    ui/widgettypeb.cpp \
+    ui/widgettypec.cpp \
+    ui/widgetgood.cpp
 
 HEADERS += \
         mainwindow.h \
@@ -39,16 +43,12 @@ HEADERS += \
     concurrentqueue.h \
     network/websocketclient.h \
     network/websocketserver.h \
-    configure.h
+    configure.h \
+    ui/widgettypea.h \
+    ui/widgettypeb.h \
+    ui/widgettypec.h \
+    ui/widgetgood.h
 
-
-#QyhTcpLib
-INCLUDEPATH += D:\thirdparty\QyhTcpLib\include
-CONFIG(debug, debug|release) {
-    LIBS += D:\thirdparty\QyhTcpLib\lib\Debug\QyhTcpLib.lib
-} else {
-    LIBS += D:\thirdparty\QyhTcpLib\lib\Release\QyhTcpLib.lib
-}
 
 RESOURCES += \
     hrgforkliftdispatcher.qrc

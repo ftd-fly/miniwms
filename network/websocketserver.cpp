@@ -31,20 +31,24 @@ bool WebsocketServer::sendToOne(QWebSocket *to,QByteArray data)
 //发送给所有人
 bool WebsocketServer::sendToAll(QByteArray data)
 {
+    bool result = true;
     for (QWebSocket *pClient : qAsConst(m_clients)) {
-        pClient->sendBinaryMessage(data);
+        if(!pClient->sendBinaryMessage(data)==data.length())result=false;
     }
+    return result;
 }
 
 //发送给所有人,except me
 bool WebsocketServer::sendToAllButMe(QWebSocket *from,QByteArray data)
 {
+    bool result = true;
     for (QWebSocket *pClient : qAsConst(m_clients)) {
         if (pClient != from) //don't echo message back to sender
         {
-            pClient->sendBinaryMessage(data);
+            if(!pClient->sendBinaryMessage(data)==data.length())result=false;
         }
     }
+    return result;
 }
 
 void WebsocketServer::onNewConnection()
@@ -60,8 +64,6 @@ void WebsocketServer::onNewConnection()
 void WebsocketServer::processMessage(const QByteArray &message)
 {
     QWebSocket *pSender = qobject_cast<QWebSocket *>(sender());
-    //不需要在判断是否在list当中。
-    //TODO:
     onRecv(pSender,message);
 }
 

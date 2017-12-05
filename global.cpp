@@ -5,7 +5,9 @@
 const QString DATE_TIME_FORMAT = "yyyy-MM-dd hh:mm:ss";//统一时间格式
 QString g_strExeRoot;
 Sql *g_sql = NULL;
-moodycamel::ConcurrentQueue<OneLog> g_request_queue;
+Configure configure;
+
+moodycamel::ConcurrentQueue<RequestGoodMsg> g_request_queue;
 
 void QyhSleep(int msec)
 {

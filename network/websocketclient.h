@@ -4,6 +4,7 @@
 #include <QObject>
 #include <QWebSocket>
 #include <QByteArray>
+#include <QAbstractSocket>
 
 
 //这里简便起见，只接受和发送二进制消息
@@ -33,9 +34,6 @@ signals:
 
     //已连接
     void sig_connect();
-
-    //错误
-    void sig_error(QAbstractSocket::SocketError error);
 
     //收到消息
     void sig_recv(QByteArray);

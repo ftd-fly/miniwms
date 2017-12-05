@@ -4,8 +4,6 @@
 #include <QVariant>
 #include <QMap>
 
-const int GRID_SIZE = 100;
-
 class Configure
 {
 public:

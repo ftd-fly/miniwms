@@ -28,7 +28,7 @@ public:
 
     //继承请实现
     //不采用信号槽是只有这一个信号，还是用 虚函数效率高[又或者直接修改代码拿去实现]
-    virtual onRecv(QWebSocket *from,QByteArray msg) = 0;
+    virtual void onRecv(QWebSocket *from,QByteArray msg) = 0;
 
 signals:
 
