@@ -11,6 +11,7 @@
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QGridLayout>
+#include <QGroupBox>
 #include <QStackedWidget>
 #include <QWidget>
 #include <QLabel>

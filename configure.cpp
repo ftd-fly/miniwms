@@ -32,29 +32,29 @@ void Configure::load()
         //方案C[60个货物存放点]
         config_map.insert("solution/type","C");
     }
-    if(!config_map.contains("solution/a_row")){
+    if(!config_map.contains("solutiona/row")){
         //方案A的行数
-        config_map.insert("solution/a_row",4);
+        config_map.insert("solutiona/row",4);
     }
-    if(!config_map.contains("solution/b_row")){
+    if(!config_map.contains("solutionb/row")){
         //方案B的行数
-        config_map.insert("solution/b_row",6);
+        config_map.insert("solutionb/row",6);
     }
-    if(!config_map.contains("solution/c_row")){
+    if(!config_map.contains("solutionc/row")){
         //方案C的行数
-        config_map.insert("solution/c_row",5);
+        config_map.insert("solutionc/row",5);
     }
-    if(!config_map.contains("solution/a_column")){
+    if(!config_map.contains("solutiona/column")){
         //方案A的列数
-        config_map.insert("solution/a_column",9);
+        config_map.insert("solutiona/column",9);
     }
-    if(!config_map.contains("solution/b_column")){
+    if(!config_map.contains("solutionb/column")){
         //方案B的列数
-        config_map.insert("solution/b_column",9);
+        config_map.insert("solutionb/column",9);
     }
-    if(!config_map.contains("solution/c_column")){
+    if(!config_map.contains("solutionc/column")){
         //方案C的列数
-        config_map.insert("solution/c_column",12);
+        config_map.insert("solutionc/column",12);
     }
 
     if(!config_map.contains("ui/good_width")){
@@ -65,10 +65,25 @@ void Configure::load()
     }
 
     if(!config_map.contains("ui/good_margin")){
-        config_map.insert("ui/good_margin",20);
+        config_map.insert("ui/good_margin",10);
     }
     if(!config_map.contains("ui/good_spacing")){
-        config_map.insert("ui/good_spacing",15);
+        config_map.insert("ui/good_spacing",5);
+    }
+    if(config_map.contains("RadioFrequency/COM")){
+        config_map.insert("RadioFrequency/COM","COM1");
+    }
+    if(config_map.contains("RadioFrequency/Parity")){
+        config_map.insert("RadioFrequency/Parity",2);
+    }
+    if(config_map.contains("RadioFrequency/BaudRate")){
+        config_map.insert("RadioFrequency/BaudRate",115200);
+    }
+    if(config_map.contains("RadioFrequency/DataBits")){
+        config_map.insert("RadioFrequency/DataBits",8);
+    }
+    if(config_map.contains("RadioFrequency/StopBits")){
+        config_map.insert("RadioFrequency/StopBits",1);
     }
 }
 

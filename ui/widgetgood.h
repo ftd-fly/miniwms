@@ -2,7 +2,7 @@
 #define WIDGETGOOD_H
 
 #include <QWidget>
-
+#include <QTimer>
 class WidgetGood : public QWidget
 {
     Q_OBJECT
@@ -12,10 +12,13 @@ public:
 
     bool hasGood(){return bHasGood;}
     void setHasGood(bool _bHasGood){bHasGood=_bHasGood;update();}
+
+    void setFlicker(bool f);
+
 signals:
 
 public slots:
-
+    void onflicker();
 protected:
     void paintEvent(QPaintEvent *event);
     bool event(QEvent* e);
@@ -25,6 +28,8 @@ private:
     bool needRotate;//是否需要旋转
     bool mouseover;
     int type;
+    QTimer flickerTimer;
+    bool flickerOn;
 };
 
 #endif // WIDGETGOOD_H

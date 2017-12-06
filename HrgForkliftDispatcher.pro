@@ -34,7 +34,11 @@ SOURCES += \
     ui/widgettypea.cpp \
     ui/widgettypeb.cpp \
     ui/widgettypec.cpp \
-    ui/widgetgood.cpp
+    ui/widgetgood.cpp \
+    controlcenter.cpp \
+    agvconnector.cpp \
+    radiofrequency.cpp \
+    crc16.cpp
 
 HEADERS += \
         mainwindow.h \
@@ -47,7 +51,11 @@ HEADERS += \
     ui/widgettypea.h \
     ui/widgettypeb.h \
     ui/widgettypec.h \
-    ui/widgetgood.h
+    ui/widgetgood.h \
+    controlcenter.h \
+    agvconnector.h \
+    radiofrequency.h \
+    crc16.h
 
 
 RESOURCES += \

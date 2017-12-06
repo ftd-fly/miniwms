@@ -6,7 +6,8 @@ WidgetGood::WidgetGood(int _code, int _type, bool _bHasGood, bool _needRotate, Q
     bHasGood(_bHasGood),
     needRotate(_needRotate),
     mouseover(false),
-    type(_type)
+    type(_type),
+    flickerOn(false)
 {
     if(!needRotate)
         this->setFixedSize(configure.getValue("ui/good_width").toInt(),configure.getValue("ui/good_height").toInt());
@@ -14,8 +15,18 @@ WidgetGood::WidgetGood(int _code, int _type, bool _bHasGood, bool _needRotate, Q
         this->setFixedSize(configure.getValue("ui/good_height").toInt(),configure.getValue("ui/good_width").toInt());
 
     this->setToolTip(QString(QStringLiteral("堆放点%1%2")).arg(_type==1?"A":"B").arg(code));
+    flickerTimer.setInterval(800);
+    connect(&flickerTimer,&QTimer::timeout,this,&WidgetGood::onflicker);
 }
-
+void WidgetGood::setFlicker(bool f)
+{
+    if(!f){
+        flickerTimer.stop();
+        flickerOn = false;
+    }else{
+        flickerTimer.start();
+    }
+}
 void WidgetGood::paintEvent(QPaintEvent *event)
 {
     QPainter painter(this);
@@ -25,18 +36,24 @@ void WidgetGood::paintEvent(QPaintEvent *event)
 
     QPen pen;
     if(mouseover){
-        pen.setWidth(5);
-        pen.setColor("red");
+        pen.setWidth(1);
+        pen.setColor("yellow");
     }else{
         pen.setWidth(0);
     }
+
+    if(flickerOn){
+        pen.setWidth(5);
+        pen.setColor("red");
+    }
+
     QColor c("#0070C0");
     if(!bHasGood)c = QColor("grey");
     painter.setPen(pen);
     painter.setBrush(c);
     QRect rectTemp = this->rect();
     if(!mouseover)
-        rectTemp.adjust(-2,-2,2,2);
+        rectTemp.adjust(-1,-1,1,1);
     painter.drawRect(rectTemp);
 
     //画中间两个
@@ -79,4 +96,9 @@ bool WidgetGood::event(QEvent* event)
         update();
     }
     return QWidget::event(event);
+}
+
+void WidgetGood::onflicker(){
+    flickerOn = !flickerOn;
+    update();
 }

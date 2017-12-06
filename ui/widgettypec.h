@@ -18,7 +18,7 @@ public:
     //取走一个B货物
     void takeGoodB();
 
-
+    void save();
 signals:
 
 public slots:
@@ -30,7 +30,7 @@ private slots:
     //平移一行货物
     void translation();
 private:
-    void updateBtnsArrows();
+    void updateBtnsArrowsFlickers();
 
     QList<WidgetGood *> widgetGoods;
 

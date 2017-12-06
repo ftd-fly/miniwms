@@ -23,6 +23,7 @@ int main(int argc, char *argv[])
 
     //显示主界面
     MainWindow w;
+    splash.finish(&w);
     w.show();
 
     return a.exec();

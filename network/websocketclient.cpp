@@ -5,15 +5,15 @@ WebsocketClient::WebsocketClient(const QUrl &url, QObject *parent) : QObject(par
 {
     connect(&m_webSocket, &QWebSocket::connected, this, &WebsocketClient::sig_connect);
     connect(&m_webSocket, &QWebSocket::disconnected, this, &WebsocketClient::sig_disconnect);
-    connect(&m_webSocket, &QWebSocket::binaryMessageReceived,this,&WebsocketClient::sig_recv);
+    connect(&m_webSocket, &QWebSocket::textMessageReceived,this,&WebsocketClient::sig_recv);
     m_webSocket.open(QUrl(url));
 }
 
 //发送数据到服务器
-bool WebsocketClient::sendToServer(QByteArray qba)
+bool WebsocketClient::sendToServer(QString qba)
 {
     if(isConnect()){
-        return m_webSocket.sendBinaryMessage(qba) == qba.length();
+        return m_webSocket.sendTextMessage(qba) == qba.length();
     }
     return false;
 }

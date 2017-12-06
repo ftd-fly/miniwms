@@ -15,7 +15,7 @@ public:
     explicit WebsocketClient(const QUrl &url,QObject *parent = nullptr);
 
     //发送数据到服务器
-    bool sendToServer(QByteArray qba);
+    bool sendToServer(QString qba);
 
     //是否已连接服务器
     bool isConnect();
@@ -36,7 +36,7 @@ signals:
     void sig_connect();
 
     //收到消息
-    void sig_recv(QByteArray);
+    void sig_recv(QString);
 public slots:
 
 private:
