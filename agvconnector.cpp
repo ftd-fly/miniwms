@@ -3,20 +3,24 @@
 #include <QJsonDocument>
 #include "global.h"
 
-AgvConnector::AgvConnector(QObject *parent) : WebsocketClient(parent),client(NULL),hasInit(false)
+AgvConnector::AgvConnector(QObject *parent) : QObject(parent),client(NULL),hasInit(false)
 {
-
 }
 
-void AgvConnector::init(const QUrl &_url)
+void AgvConnector::init(int _id,QString _ip,int _port)
 {
-    url = _url;
+    id =_id;
+    ip = _ip;
+    port = _port;
+    QString _url = QString("ws://%1:%2").arg(ip).arg(port);
+    url = QUrl(_url);
     if(client)delete client;
     client = new WebsocketClient(url);
     connect(client,SIGNAL(sig_recv(QString)),this,SLOT(onRecv(QString)));
     connect(client,SIGNAL(sig_disconnect()),this,SLOT(reconnect()));
     connect(client,SIGNAL(sig_connect()),this,SLOT(onConnect()));
 }
+
 bool AgvConnector::isconnect()
 {
     if(!client)return false;
@@ -63,16 +67,16 @@ void AgvConnector::onConnect()
         qDebug() << jsonDocument.toJson();
         client->sendToServer(QString(jsonDocument.toJson()));
     }
-
-    client->sendToServer(initCmd);
+    queryStatusTimer.setInterval(2000);
+    connect(&queryStatusTimer,SIGNAL(timeout()),this,SLOT(queryStatus()));
 }
 
 void AgvConnector::processOneJson(QString json)
 {
     QJsonParseError error;
-    QJsonDocument jsonDocument = QJsonDocument::fromJson(json, &error);
+    QJsonDocument jsonDocument = QJsonDocument::fromJson(json.toLatin1(), &error);
     if (error.error != QJsonParseError::NoError) {
-        qDebug()<<"parse json error:" << error;
+        qDebug()<<"parse json error:" << error.errorString();
         return ;
     }
 
@@ -84,8 +88,6 @@ void AgvConnector::processOneJson(QString json)
     if(result["waypoint_name"].toString().length()>0&&result["status_desc"].toString().length()>0){
         status = result["status_desc"].toInt();
     }
-
-
 }
 
 //从那条线上，运送到那个站点
@@ -106,28 +108,36 @@ bool AgvConnector::sendTask(int line,int station)
     QJsonDocument pubJson = QJsonDocument::fromVariant(pub);
     qDebug() << pubJson.toJson();
     if(!client->sendToServer(QString(pubJson.toJson())))return false;
-    //等待返回值？
+    taskType = line;
+    //等待返回值？//协议中未给出返回值！
     return true;
 }
 
-
-bool AgvConnector::queryBussy()
+int AgvConnector::queryStatus()
 {
+    static int lastStatus = UNKNOWN;
     QVariantMap query;
     query.insert("op", "subscribe");
     query.insert("topic", "/nav_ctrl_status");
     query.insert("type", "yocs_msgs/NavigationControlStatus");
     QJsonDocument queryJson = QJsonDocument::fromVariant(query);
-    status = -99;
+    status = UNKNOWN;
     if(!client->sendToServer(QString(queryJson.toJson())))return false;
     //等待返回值
-    while(status == -99)QyhSleep(100);
+    int kk = 10;//超时
+    while(status == UNKNOWN && --kk > 0)QyhSleep(100);
 
-    //ERROR: -1     错误
-    //IDLING：0     空闲
-    //RUNNING：1    正在运行
-    //PAUSED: 2     暂停
-    //COMPLETED:3   完成
-    //CANCELLED: 4  取消
-    return status == 0;
+    if(status == COMPLETED && lastStatus != status){
+        emit finish(taskType);
+    }else if(status == ERROR && lastStatus != status){
+        emit error();
+    }
+
+    lastStatus = status;
+    return status;
+}
+
+bool AgvConnector::isIdle()
+{
+    return queryStatus() == IDLING;
 }

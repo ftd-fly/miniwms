@@ -1,6 +1,6 @@
-﻿#include "widgettypec.h"
+﻿#include <assert.h>
+#include "widgettypec.h"
 #include "global.h"
-
 #include "widgetgood.h"
 
 WidgetTypeC::WidgetTypeC(QWidget *parent) : QWidget(parent)
@@ -281,4 +281,22 @@ void WidgetTypeC::save()
     }
 
     configure.save();
+}
+
+int WidgetTypeC::getNextAStation()
+{
+    if(widgetGoods.at(nextTakeRowA*column+nextTakeColumnA)->hasGood())
+    {
+        return  nextTakeRowA*column+nextTakeColumnA;
+    }
+    return -1;
+}
+
+int WidgetTypeC::getNextBStation()
+{
+    if(widgetGoods.at(nextTakeRowB*column+nextTakeColumnB)->hasGood())
+    {
+        return  nextTakeRowB*column+nextTakeColumnB;
+    }
+    return -1;
 }

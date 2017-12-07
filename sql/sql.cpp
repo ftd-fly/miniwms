@@ -28,23 +28,11 @@ bool Sql::checkTables()
     QStringList args;
 
     args.clear();
-    args<<"agv_agv";
+    args<<"agv_task";
     QList<QStringList> qsl = query(querySql,args);
     if(qsl.length()!=1||qsl[0].length()!=1||qsl[0][0]!="1"){
         //不存在.创建
-        //MYSQL:
-        QString createSql = "create table agv_agv (id INTEGER PRIMARY KEY AUTO_INCREMENT, agv_ip text, agv_port INTEGER);";
-        args.clear();
-        bool b = exeSql(createSql,args);
-        if(!b)return false;
-    }
-
-    args.clear();
-    args<<"agv_task";
-    qsl = query(querySql,args);
-    if(qsl.length()!=1||qsl[0].length()!=1||qsl[0][0]!="1"){
-        //不存在.创建
-        QString createSql = "create table agv_task (id INTEGER PRIMARY KEY AUTO_INCREMENT,task_createTime datetime,task_excuteTime datetime,task_finishTime datetime,task_type INTEGER,station INTEGER,excuteAgv INTEGER);";
+        QString createSql = "create table agv_task (id INTEGER PRIMARY KEY AUTO_INCREMENT,task_createTime datetime,task_excuteTime datetime,task_finishTime datetime,task_line INTEGER,station INTEGER,excuteAgv INTEGER);";
         args.clear();
         bool b = exeSql(createSql,args);
         if(!b)return false;

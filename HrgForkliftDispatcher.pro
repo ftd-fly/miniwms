@@ -44,7 +44,6 @@ HEADERS += \
         mainwindow.h \
     sql/sql.h \
     global.h \
-    concurrentqueue.h \
     network/websocketclient.h \
     network/websocketserver.h \
     configure.h \
@@ -55,7 +54,8 @@ HEADERS += \
     controlcenter.h \
     agvconnector.h \
     radiofrequency.h \
-    crc16.h
+    crc16.h \
+    task.h
 
 
 RESOURCES += \

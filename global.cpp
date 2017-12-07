@@ -7,7 +7,20 @@ QString g_strExeRoot;
 Sql *g_sql = NULL;
 Configure configure;
 
-moodycamel::ConcurrentQueue<RequestGoodMsg> g_request_queue;
+/////////////////////////////////////////////////////////
+int row;
+int column;
+QList<int> endPoints;//考虑到平移的问题，用于标记该行是否执行到底，
+QList<WidgetGood *> widgetGoods;
+
+//标记下一个取货A的点
+int nextTakeColumnA;
+int nextTakeRowA;
+
+//标记下一个取货B的点
+int nextTakeRowB;
+int nextTakeColumnB;
+/////////////////////////////////////////////////////////
 
 void QyhSleep(int msec)
 {
@@ -25,4 +38,25 @@ int getRandom(int maxRandom)
     if(maxRandom>0)
         return qrand()%maxRandom;
     return qrand();
+}
+
+
+int getNextAStation()
+{
+    if(nextTakeRowA*column+nextTakeColumnA > widgetGoods.length())return -1;
+    if(widgetGoods.at(nextTakeRowA*column+nextTakeColumnA)->hasGood())
+    {
+        return  nextTakeRowA*column+nextTakeColumnA;
+    }
+    return -1;
+}
+
+int getNextBStation()
+{
+    if(nextTakeRowB*column+nextTakeColumnB > widgetGoods.length())return -1;
+    if(widgetGoods.at(nextTakeRowB*column+nextTakeColumnB)->hasGood())
+    {
+        return  nextTakeRowB*column+nextTakeColumnB;
+    }
+    return -1;
 }

@@ -13,7 +13,7 @@ public:
     ~RadioFrequency();
     bool init();
 signals:
-
+    void buttonClick(int address);
 public slots:
     void queryStatus();
     void onRead();
