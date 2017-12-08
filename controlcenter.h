@@ -3,8 +3,9 @@
 
 #include <QObject>
 #include "radiofrequency.h"
-#include "global.h"
 #include "agvconnector.h"
+#include "task.h"
+
 class ControlCenter : public QObject
 {
     Q_OBJECT
@@ -16,7 +17,7 @@ signals:
 public slots:
     void onButtn(int address);
     void onTaskCheck();
-    void onTaskFinish(int type);
+    void onTaskFinish(int taskId);
 private:
     RadioFrequency rf;
     bool task81Finish;

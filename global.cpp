@@ -6,6 +6,7 @@ const QString DATE_TIME_FORMAT = "yyyy-MM-dd hh:mm:ss";//统一时间格式
 QString g_strExeRoot;
 Sql *g_sql = NULL;
 Configure configure;
+ControlCenter controlCenter;
 
 /////////////////////////////////////////////////////////
 int row;

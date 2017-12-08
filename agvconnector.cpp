@@ -91,7 +91,7 @@ void AgvConnector::processOneJson(QString json)
 }
 
 //从那条线上，运送到那个站点
-bool AgvConnector::sendTask(int line,int station)
+bool AgvConnector::sendTask(int _taskId, int line, int station)
 {
     QString goal_name = QString("Line_%1ToCache_%2").arg(line).arg(station);
 
@@ -108,8 +108,8 @@ bool AgvConnector::sendTask(int line,int station)
     QJsonDocument pubJson = QJsonDocument::fromVariant(pub);
     qDebug() << pubJson.toJson();
     if(!client->sendToServer(QString(pubJson.toJson())))return false;
-    taskType = line;
-    //等待返回值？//协议中未给出返回值！
+    taskId = _taskId;
+    //等待返回值？//协议中未给出返回值！直接认为是成功的
     return true;
 }
 
@@ -128,7 +128,7 @@ int AgvConnector::queryStatus()
     while(status == UNKNOWN && --kk > 0)QyhSleep(100);
 
     if(status == COMPLETED && lastStatus != status){
-        emit finish(taskType);
+        emit finish(taskId);
     }else if(status == ERROR && lastStatus != status){
         emit error();
     }

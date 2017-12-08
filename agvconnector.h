@@ -24,12 +24,12 @@ public:
     void init(int _id, QString _ip, int _port);
     bool isconnect();
     bool isinit();
-    bool sendTask(int line,int station);
+    bool sendTask(int _taskId,int line,int station);
     bool isIdle();
     int getId(){return id;}
 signals:
     void error();//发生错误
-    void finish(int _taskType);//完成了一个任务
+    void finish(int _taskId);//完成了一个任务
 public slots:
     void onRecv(QString str);
     void reconnect();
@@ -41,7 +41,7 @@ private:
     QUrl url;
     bool hasInit;
     int status;
-    int taskType;//正在执行的任务的类型
+    int taskId;//正在执行的任务的类型
     QTimer queryStatusTimer;
 
     int id;

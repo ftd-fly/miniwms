@@ -50,6 +50,7 @@
 #include "sql/sql.h"
 #include "configure.h"
 #include "ui/widgetgood.h"
+#include "controlcenter.h"
 
 //全局 变量
 extern const QString DATE_TIME_FORMAT;
@@ -62,7 +63,7 @@ extern int row;//货物行数
 extern int column;//货物列数
 extern QList<int> endPoints;//考虑到平移的问题，用于标记该行是否执行到底，
 extern QList<WidgetGood *> widgetGoods;//所有的货物
-
+extern ControlCenter controlCenter;
 //标记下一个取货A的点
 extern int nextTakeColumnA;
 extern int nextTakeRowA;

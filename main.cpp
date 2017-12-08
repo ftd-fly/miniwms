@@ -21,6 +21,12 @@ int main(int argc, char *argv[])
     //载入配置文件
     configure.load();
 
+    //初始化控制中心
+    if(!controlCenter.init())
+    {
+        qDebug() <<"controlCenter init fail";
+        return -1;
+    }
     //显示主界面
     MainWindow w;
     splash.finish(&w);
