@@ -32,30 +32,46 @@ void Configure::load()
         //方案C[60个货物存放点]
         config_map.insert("solution/type","C");
     }
-    if(!config_map.contains("solutiona/row")){
+
+    if(!config_map.contains("solutionA/row")){
         //方案A的行数
-        config_map.insert("solutiona/row",4);
+        config_map.insert("solutionA/row",4);
     }
-    if(!config_map.contains("solutionb/row")){
+    if(!config_map.contains("solutionB/row")){
         //方案B的行数
-        config_map.insert("solutionb/row",6);
+        config_map.insert("solutionB/row",6);
     }
-    if(!config_map.contains("solutionc/row")){
+    if(!config_map.contains("solutionC/row")){
         //方案C的行数
-        config_map.insert("solutionc/row",5);
+        config_map.insert("solutionC/row",5);
     }
-    if(!config_map.contains("solutiona/column")){
+
+    if(!config_map.contains("solutionA/column")){
         //方案A的列数
-        config_map.insert("solutiona/column",9);
+        config_map.insert("solutionA/column",9);
     }
-    if(!config_map.contains("solutionb/column")){
+    if(!config_map.contains("solutionB/column")){
         //方案B的列数
-        config_map.insert("solutionb/column",9);
+        config_map.insert("solutionB/column",9);
     }
-    if(!config_map.contains("solutionc/column")){
+    if(!config_map.contains("solutionC/column")){
         //方案C的列数
-        config_map.insert("solutionc/column",12);
+        config_map.insert("solutionC/column",12);
     }
+
+    if(!config_map.contains("solutionA/rowA")){
+        //方案A的货物A的行数
+        config_map.insert("solutionA/rowA",3);
+    }
+    if(!config_map.contains("solutionB/rowA")){
+        //方案B的货物A的行数
+        config_map.insert("solutionB/rowA",3);
+    }
+    if(!config_map.contains("solutionC/rowA")){
+        //方案C的货物A的行数
+        config_map.insert("solutionC/rowA",3);
+    }
+
 
     if(!config_map.contains("ui/good_width")){
         config_map.insert("ui/good_width",90);

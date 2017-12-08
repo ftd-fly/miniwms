@@ -139,6 +139,12 @@ void ControlCenter::onTaskCheck()
 
         doingTasks.append(t);
         todoTasks.removeAt(0);
+
+        //开始执行，便将货物从UI界面中移除。
+        if(t.line == Task::LineA)
+            centerWidget->takeGoodA();
+        else
+            centerWidget->takeGoodA();
     }
 }
 

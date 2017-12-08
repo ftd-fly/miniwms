@@ -11,9 +11,13 @@ ControlCenter controlCenter;
 /////////////////////////////////////////////////////////
 int row;
 int column;
+int rowA;
 QList<int> endPoints;//考虑到平移的问题，用于标记该行是否执行到底，
 QList<WidgetGood *> widgetGoods;
 
+//方案A/B/C 默认采用方案C
+QString solutionPrefix = "C";
+CenterWidget *centerWidget = NULL;
 //标记下一个取货A的点
 int nextTakeColumnA;
 int nextTakeRowA;

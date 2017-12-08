@@ -13,16 +13,17 @@ MainWindow::MainWindow(QWidget *parent)
     //载入CentralWidget
     if(configure.getValue("solution/type").toString() == "A")
     {
-        WidgetTypeA *widgetA = new WidgetTypeA;
-        setCentralWidget(widgetA);
-    }else if(configure.getValue("solution").toString() == "B")
+        solutionPrefix = "A";
+        centerWidget = new WidgetTypeA;
+    }else if(configure.getValue("solution/type").toString() == "B")
     {
-        WidgetTypeB *widgetB = new WidgetTypeB;
-        setCentralWidget(widgetB);
+        solutionPrefix = "B";
+        centerWidget = new WidgetTypeB;
     }else{
-        WidgetTypeC *widgetC = new WidgetTypeC;
-        setCentralWidget(widgetC);
+        solutionPrefix = "C";
+        centerWidget = new WidgetTypeC;
     }
+    setCentralWidget(centerWidget);
 }
 
 MainWindow::~MainWindow()

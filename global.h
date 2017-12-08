@@ -44,6 +44,8 @@
 #include <QStyleOptionGraphicsItem>
 #include <QPainter>
 #include <QWidget>
+#include <QLCDNumber>
+#include <QTimer>
 #include <QDebug>
 
 #include "task.h"
@@ -51,16 +53,19 @@
 #include "configure.h"
 #include "ui/widgetgood.h"
 #include "controlcenter.h"
-
+#include "ui/centerwidget.h"
 //全局 变量
 extern const QString DATE_TIME_FORMAT;
 extern QString g_strExeRoot;
 extern Sql *g_sql;
 extern Configure configure;
+extern CenterWidget *centerWidget;
+extern QString solutionPrefix;
 
 /////////////////////////////////////////////////////////
 extern int row;//货物行数
 extern int column;//货物列数
+extern int rowA;//货物A的行数,row-rowA就是货物B的行数
 extern QList<int> endPoints;//考虑到平移的问题，用于标记该行是否执行到底，
 extern QList<WidgetGood *> widgetGoods;//所有的货物
 extern ControlCenter controlCenter;

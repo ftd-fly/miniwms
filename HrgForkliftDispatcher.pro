@@ -38,7 +38,8 @@ SOURCES += \
     controlcenter.cpp \
     agvconnector.cpp \
     radiofrequency.cpp \
-    crc16.cpp
+    crc16.cpp \
+    ui/centerwidget.cpp
 
 HEADERS += \
         mainwindow.h \
@@ -55,7 +56,8 @@ HEADERS += \
     agvconnector.h \
     radiofrequency.h \
     crc16.h \
-    task.h
+    task.h \
+    ui/centerwidget.h
 
 
 RESOURCES += \

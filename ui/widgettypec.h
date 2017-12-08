@@ -2,44 +2,21 @@
 #define WIDGETTYPEC_H
 
 #include <QWidget>
-#include "widgetgood.h"
-class QPushButton;
-class QLabel;
+#include "centerwidget.h"
 
-class WidgetTypeC : public QWidget
+class WidgetTypeC : public CenterWidget
 {
     Q_OBJECT
 public:
     explicit WidgetTypeC(QWidget *parent = nullptr);
 
-    //取走一个A货物
-    void takeGoodA();
-
-    //取走一个B货物
-    void takeGoodB();
-
-    int getNextAStation();
-    int getNextBStation();
 signals:
 
 public slots:
 
-private slots:
-    //填满一行A货物
-    void fillRow();
-
-    //平移一行货物
-    void translation();
-private:
-    void save();
-
-    void updateBtnsArrowsFlickers();
-
-    QList<QLabel *> indexLabels;
-
-    QList<QPushButton *> fillButtons;//补满一行货
-
-    QList<QPushButton *> translationButtons;//平移一行货A
+protected:
+    //将按钮、货物，摆放在合适的位置
+    void initGoodPosition();
 };
 
 #endif // WIDGETTYPEC_H
