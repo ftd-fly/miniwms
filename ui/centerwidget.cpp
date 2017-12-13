@@ -216,6 +216,14 @@ void CenterWidget::translation()
             widgetGoods.at(i)->setHasGood(true);
         }
         save();
+        //更新当前取货位置
+        if(index<rowA)
+        {
+            nextTakeColumnA = 0;
+        }else{
+            nextTakeColumnB = 0;
+        }
+
         updateBtnsFlickers();
     }
 }
@@ -269,10 +277,23 @@ void CenterWidget::takeGoodA()
         if(endPoints.at(nextTakeRowA) !=0){
             endPoints[nextTakeRowA] = 0;
         }
+        //指向下一行首个位置取货
         nextTakeRowA+=1;
         nextTakeColumnA = 0;
         if(nextTakeRowA>=rowA){
             nextTakeRowA = 0;
+        }
+
+        if(!widgetGoods.at(nextTakeRowA*column+nextTakeColumnA)->hasGood())
+        {
+            //如果首个位置没有货物，判断是否该行其他位置有货，指向该行剩余的
+            for(int columnIndex = nextTakeColumnA;columnIndex< column-endPoints.at(nextTakeRowA);++columnIndex)
+            {
+                if(widgetGoods.at(nextTakeRowA*column+columnIndex)->hasGood()){
+                    nextTakeColumnA = columnIndex;
+                    break;
+                }
+            }
         }
     }
     save();
@@ -302,6 +323,18 @@ void CenterWidget::takeGoodB()
         nextTakeColumnB = 0;
         if(nextTakeRowB>=row){
             nextTakeRowB = rowA;
+        }
+
+        if(!widgetGoods.at(nextTakeRowB*column+nextTakeColumnB)->hasGood())
+        {
+            //如果首个位置没有货物，判断是否该行其他位置有货，指向该行剩余的
+            for(int columnIndex = nextTakeColumnB;columnIndex< column-endPoints.at(nextTakeRowB);++columnIndex)
+            {
+                if(widgetGoods.at(nextTakeRowB*column+columnIndex)->hasGood()){
+                    nextTakeColumnB = columnIndex;
+                    break;
+                }
+            }
         }
     }
 
