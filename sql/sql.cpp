@@ -53,12 +53,12 @@ bool Sql::createConnection()
     else
     {
         database = QSqlDatabase::addDatabase("QMYSQL","mysqliteconnection");
-        database.setHostName("localhost");
-        database.setDatabaseName("agv");
-        database.setPort(3306);
+        database.setHostName(configure.getValue("mysql/host").toString());
+        database.setDatabaseName(configure.getValue("mysql/database").toString());
+        database.setPort(configure.getValue("mysql/port").toInt());
 
-        database.setUserName("root");
-        database.setPassword("6980103");
+        database.setUserName(configure.getValue("mysql/username").toString());
+        database.setPassword(configure.getValue("mysql/password").toString());
     }
 
     if(!database.isValid())return false;

@@ -101,6 +101,22 @@ void Configure::load()
     if(config_map.contains("RadioFrequency/StopBits")){
         config_map.insert("RadioFrequency/StopBits",1);
     }
+
+    if(config_map.contains("mysql/host")){
+        config_map.insert("mysql/host","localhost");
+    }
+    if(config_map.contains("mysql/port")){
+        config_map.insert("mysql/port",3306);
+    }
+    if(config_map.contains("mysql/database")){
+        config_map.insert("mysql/database","agv");
+    }
+    if(config_map.contains("mysql/username")){
+        config_map.insert("mysql/username","qyh");
+    }
+    if(config_map.contains("mysql/password")){
+        config_map.insert("mysql/password","6980103");
+    }
 }
 
 void Configure::save()
