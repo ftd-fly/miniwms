@@ -65,8 +65,8 @@ void CenterWidget::init()
     QPushButton *takeABtn = new QPushButton(QStringLiteral("取走一个A"));
     QPushButton *takeBBtn = new QPushButton(QStringLiteral("取走一个B"));
 
-    connect(takeABtn,SIGNAL(clicked(bool)),this,SLOT(takeGoodA()));
-    connect(takeBBtn,SIGNAL(clicked(bool)),this,SLOT(takeGoodB()));
+    connect(takeABtn,SIGNAL(clicked(bool)),this,SLOT(onBtnA()));
+    connect(takeBBtn,SIGNAL(clicked(bool)),this,SLOT(onBtnB()));
 
     QHBoxLayout *testTwoBtnHlayout = new QHBoxLayout;
     testTwoBtnHlayout->addStretch(1);
@@ -411,4 +411,15 @@ void CenterWidget::save()
     }
     //保存到配置文件
     configure.save();
+}
+
+
+void CenterWidget::onBtnA()
+{
+    controlCenter.onButtn(0x81);
+}
+
+void CenterWidget::onBtnB()
+{
+    controlCenter.onButtn(0x82);
 }

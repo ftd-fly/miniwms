@@ -30,7 +30,7 @@ bool Sql::checkTables()
     args.clear();
     args<<"agv_task";
     QList<QStringList> qsl = query(querySql,args);
-    if(qsl.length()!=1||qsl[0].length()!=1||qsl[0][0]!="1"){
+    if(qsl.length()!=1||qsl[0].length()!=1||qsl[0][0]=="0"){
         //不存在.创建
         QString createSql = "create table agv_task (id INTEGER PRIMARY KEY AUTO_INCREMENT,task_createTime datetime,task_excuteTime datetime,task_finishTime datetime,task_line INTEGER,station INTEGER,excuteAgv INTEGER);";
         args.clear();

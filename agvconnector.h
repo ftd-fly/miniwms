@@ -34,7 +34,7 @@ public slots:
     void onRecv(QString str);
     void reconnect();
     void onConnect();
-    int queryStatus();
+    bool queryStatus();
 private:
     void processOneJson(QString json);
     WebsocketClient *client;
@@ -42,7 +42,6 @@ private:
     bool hasInit;
     int status;
     int taskId;//正在执行的任务的类型
-    QTimer queryStatusTimer;
 
     int id;
     QString ip;

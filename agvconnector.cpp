@@ -1,6 +1,7 @@
 ﻿#include "agvconnector.h"
 #include <QJsonParseError>
 #include <QJsonDocument>
+#include <QJsonArray>
 #include "global.h"
 
 AgvConnector::AgvConnector(QObject *parent) : QObject(parent),client(NULL),hasInit(false)
@@ -34,16 +35,8 @@ bool AgvConnector::isinit()
 }
 void AgvConnector::onRecv(QString str)
 {
-    static QString buff;
-    buff+=str;
-    int start,end;
-    start = buff.indexOf("{");
-    end=buff.indexOf("}",start);
-    if(start==-1||end==-1)return;
-    QString oneJson = buff.mid(start,end-start+1);
-    buff = buff.right(buff.length()-end-1);
-    //对其进行解析
-    processOneJson(oneJson);
+    qDebug() << "recv:"<<str;
+    processOneJson(str);
 }
 
 void AgvConnector::reconnect()
@@ -55,8 +48,7 @@ void AgvConnector::reconnect()
 
 void AgvConnector::onConnect()
 {
-    //连上以后
-    //发出初始化指令
+    //连上以后    //发出初始化指令
     QVariantMap initcmd;
     initcmd.insert("op", "advertise");
     initcmd.insert("topic", "/nav_ctrl");
@@ -67,16 +59,21 @@ void AgvConnector::onConnect()
         qDebug() << jsonDocument.toJson();
         client->sendToServer(QString(jsonDocument.toJson()));
     }
-    queryStatusTimer.setInterval(2000);
-    connect(&queryStatusTimer,SIGNAL(timeout()),this,SLOT(queryStatus()));
+    QyhSleep(1000);
+
+    //发出状态订阅
+    queryStatus();
 }
 
 void AgvConnector::processOneJson(QString json)
 {
-    QJsonParseError error;
-    QJsonDocument jsonDocument = QJsonDocument::fromJson(json.toLatin1(), &error);
-    if (error.error != QJsonParseError::NoError) {
-        qDebug()<<"parse json error:" << error.errorString();
+    static int lastStatus = UNKNOWN;
+    if(json.startsWith("\""))json = json.right(json.length()-1);
+    if(json.endsWith("\""))json = json.left(json.length()-1);
+    QJsonParseError parseError;
+    QJsonDocument jsonDocument = QJsonDocument::fromJson(json.toLocal8Bit(), &parseError);
+    if (parseError.error != QJsonParseError::NoError) {
+        qDebug()<<"parse json error:" << parseError.errorString();
         return ;
     }
 
@@ -85,8 +82,14 @@ void AgvConnector::processOneJson(QString json)
     {
         hasInit = true;
     }
-    if(result["waypoint_name"].toString().length()>0&&result["status_desc"].toString().length()>0){
-        status = result["status_desc"].toInt();
+    if(result["msg"].toMap()["waypoint_name"].toString().length()>0&&result["msg"].toMap()["status"].toString().length()>0){
+        status = result["msg"].toMap()["status"].toInt();
+        if(status == COMPLETED && lastStatus != status){
+            emit finish(taskId);
+        }else if(status == ERROR && lastStatus != status){
+            emit error();
+        }
+        lastStatus = status;
     }
 }
 
@@ -113,31 +116,21 @@ bool AgvConnector::sendTask(int _taskId, int line, int station)
     return true;
 }
 
-int AgvConnector::queryStatus()
+bool AgvConnector::queryStatus()
 {
-    static int lastStatus = UNKNOWN;
     QVariantMap query;
     query.insert("op", "subscribe");
     query.insert("topic", "/nav_ctrl_status");
     query.insert("type", "yocs_msgs/NavigationControlStatus");
     QJsonDocument queryJson = QJsonDocument::fromVariant(query);
     status = UNKNOWN;
+    qDebug() << "send:"<<QString(queryJson.toJson());
     if(!client->sendToServer(QString(queryJson.toJson())))return false;
-    //等待返回值
-    int kk = 10;//超时
-    while(status == UNKNOWN && --kk > 0)QyhSleep(100);
 
-    if(status == COMPLETED && lastStatus != status){
-        emit finish(taskId);
-    }else if(status == ERROR && lastStatus != status){
-        emit error();
-    }
-
-    lastStatus = status;
-    return status;
+    return true;
 }
 
 bool AgvConnector::isIdle()
 {
-    return queryStatus() == IDLING;
+    return status == IDLING;
 }

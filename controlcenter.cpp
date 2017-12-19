@@ -22,8 +22,10 @@ bool ControlCenter::init()
     for(int i=0;i<quantity;++i){
 
         int id = i+1;
-        QString ip = configure.getValue(QString("agv/agv_ip_").arg(id)).toString();
-        int port = configure.getValue(QString("agv/agv_port_").arg(id)).toInt();
+        QString ipKey = QString("agv/agv_ip_%1").arg(id);
+        QString portKey = QString("agv/agv_port_%1").arg(id);
+        QString ip = configure.getValue(ipKey).toString();
+        int port = configure.getValue(portKey).toInt();
 
         if(ip.length()>0 && port>0){
             AgvConnector *agv = new AgvConnector;
@@ -38,12 +40,13 @@ bool ControlCenter::init()
     //任务轮询定时器
     tasktimer.setInterval(1000);
     connect(&tasktimer,SIGNAL(timeout()),this,SLOT(onTaskCheck()));
-
+    tasktimer.start();
     return true;
 }
 
 void ControlCenter::onButtn(int address)
 {
+    static int kk = 0;
     if(address == 0x81 && task81Finish)
     {
         //产生一个A任务
@@ -65,7 +68,6 @@ void ControlCenter::onButtn(int address)
             //存库失败！
             QMessageBox::critical(NULL,QStringLiteral("错误"),QStringLiteral("对新任务存库失败"),QMessageBox::Ok);
         }
-
     }else if(address == 0x82 && task82Finish)
     {
         //产生一个B任务
@@ -103,7 +105,6 @@ void ControlCenter::onTaskCheck()
             break;
         }
     }
-
     //没有空闲车辆
     if(agv==NULL)return ;
 
@@ -167,7 +168,7 @@ void ControlCenter::onTaskFinish(int taskId)
             QString updateSql = "update agv_task set task_finishTime=? where id=?";;
             QStringList params;
             params<<t.task_excuteTime.toString(DATE_TIME_FORMAT)
-               <<QString("%1").arg(t.id);
+                 <<QString("%1").arg(t.id);
 
             if(!g_sql->exeSql(updateSql,params))
             {

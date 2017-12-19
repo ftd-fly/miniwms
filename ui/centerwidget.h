@@ -23,6 +23,10 @@ public slots:
     //取走一个B货物
     void takeGoodB();
 
+    void onBtnA();
+
+    void onBtnB();
+
 protected:
     //将按钮、货物，摆放在合适的位置
     virtual void initGoodPosition() = 0;

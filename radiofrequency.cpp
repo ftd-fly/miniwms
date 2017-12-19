@@ -8,7 +8,7 @@ RadioFrequency::RadioFrequency(QObject *parent) : QObject(parent)
     serial = new QSerialPort(this);
     connect(serial, &QSerialPort::readyRead,this, &RadioFrequency::onRead);
 
-    queryTimer.setInterval(150);
+    queryTimer.setInterval(250);
     connect(&queryTimer,&QTimer::timeout,this,&RadioFrequency::queryStatus);
 }
 

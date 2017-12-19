@@ -86,35 +86,35 @@ void Configure::load()
     if(!config_map.contains("ui/good_spacing")){
         config_map.insert("ui/good_spacing",5);
     }
-    if(config_map.contains("RadioFrequency/COM")){
+    if(!config_map.contains("RadioFrequency/COM")){
         config_map.insert("RadioFrequency/COM","COM1");
     }
-    if(config_map.contains("RadioFrequency/Parity")){
+    if(!config_map.contains("RadioFrequency/Parity")){
         config_map.insert("RadioFrequency/Parity",2);
     }
-    if(config_map.contains("RadioFrequency/BaudRate")){
+    if(!config_map.contains("RadioFrequency/BaudRate")){
         config_map.insert("RadioFrequency/BaudRate",115200);
     }
-    if(config_map.contains("RadioFrequency/DataBits")){
+    if(!config_map.contains("RadioFrequency/DataBits")){
         config_map.insert("RadioFrequency/DataBits",8);
     }
-    if(config_map.contains("RadioFrequency/StopBits")){
+    if(!config_map.contains("RadioFrequency/StopBits")){
         config_map.insert("RadioFrequency/StopBits",1);
     }
 
-    if(config_map.contains("mysql/host")){
+    if(!config_map.contains("mysql/host")){
         config_map.insert("mysql/host","localhost");
     }
-    if(config_map.contains("mysql/port")){
+    if(!config_map.contains("mysql/port")){
         config_map.insert("mysql/port",3306);
     }
-    if(config_map.contains("mysql/database")){
-        config_map.insert("mysql/database","agv");
+    if(!config_map.contains("mysql/database")){
+        config_map.insert("mysql/database","agv2");
     }
-    if(config_map.contains("mysql/username")){
-        config_map.insert("mysql/username","qyh");
+    if(!config_map.contains("mysql/username")){
+        config_map.insert("mysql/username","root");
     }
-    if(config_map.contains("mysql/password")){
+    if(!config_map.contains("mysql/password")){
         config_map.insert("mysql/password","6980103");
     }
 }
