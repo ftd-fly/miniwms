@@ -7,7 +7,8 @@ WidgetGood::WidgetGood(int _code, int _type, int _iHasGood, bool _needRotate, QW
     needRotate(_needRotate),
     mouseover(false),
     type(_type),
-    flickerOn(false)
+    takeFlickerOn(false),
+    putFlickerOn(false)
 {
     if(!needRotate)
         this->setFixedSize(configure.getValue("ui/good_width").toInt(),configure.getValue("ui/good_height").toInt());
@@ -15,18 +16,35 @@ WidgetGood::WidgetGood(int _code, int _type, int _iHasGood, bool _needRotate, QW
         this->setFixedSize(configure.getValue("ui/good_height").toInt(),configure.getValue("ui/good_width").toInt());
 
     this->setToolTip(QString(QStringLiteral("堆放点%1_%2_%3")).arg(_type==1?"A":"B").arg(1+((code-1)/column)).arg(1+(code-1)%column));
-    flickerTimer.setInterval(800);
-    connect(&flickerTimer,&QTimer::timeout,this,&WidgetGood::onflicker);
+    takeFlickerTimer.setInterval(800);
+    connect(&takeFlickerTimer,&QTimer::timeout,this,&WidgetGood::onTakeFlicker);
+
+    putFlickerTimer.setInterval(800);
+    connect(&putFlickerTimer,&QTimer::timeout,this,&WidgetGood::onPutFlicker);
 }
-void WidgetGood::setFlicker(bool f)
+
+void WidgetGood::setTakeFlicker(bool f)
 {
     if(!f){
-        flickerTimer.stop();
-        flickerOn = false;
+        takeFlickerTimer.stop();
+        takeFlickerOn = false;
+        update();
     }else{
-        flickerTimer.start();
+        takeFlickerTimer.start();
     }
 }
+
+void WidgetGood::setPutFlicker(bool f)
+{
+    if(!f){
+        putFlickerTimer.stop();
+        putFlickerOn = false;
+        update();
+    }else{
+        putFlickerTimer.start();
+    }
+}
+
 void WidgetGood::paintEvent(QPaintEvent *event)
 {
     QPainter painter(this);
@@ -41,13 +59,17 @@ void WidgetGood::paintEvent(QPaintEvent *event)
         pen.setWidth(0);
     }
 
-    if(flickerOn){
-        pen.setWidth(5);
+    if(takeFlickerOn){
+        pen.setWidth(8);
         pen.setColor("red");
     }
 
     QColor c("#0070C0");
-    if(iHasGood<=0)c = QColor("grey");
+    if(iHasGood<=0)c = QColor("darkgray");
+    if(putFlickerOn)
+    {
+        c = QColor("gold");
+    }
     painter.setPen(pen);
     painter.setBrush(c);
     QRect rectTemp = this->rect();
@@ -100,7 +122,7 @@ bool WidgetGood::event(QEvent* event)
     }else if (event->type()==QEvent::Leave){
         mouseover = false;
         update();
-    }else if(event->type() == QEvent::MouseButtonPress){
+    }else if(event->type() == QEvent::MouseButtonPress && putFlickerTimer.isActive()){
         QMouseEvent *e = static_cast<QMouseEvent*> (event);
         if(e->button() == Qt::LeftButton && iHasGood<=0)
         {
@@ -110,7 +132,7 @@ bool WidgetGood::event(QEvent* event)
 
             text+= QString("%1_%2").arg(1+(code-1)/column).arg(1+(code-1)%column);
             //左键单机，进行添加
-            QMessageBox::StandardButton rb = QMessageBox::warning(this,tr("确定摆放"),tr("确认在")+text+tr("摆放货物？"),QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
+            QMessageBox::StandardButton rb = QMessageBox::warning(this,QStringLiteral("确定摆放"),QStringLiteral("确认在")+text+QStringLiteral("摆放货物？"),QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
             if(rb == QMessageBox::Yes)
             {
                 if(type==1){
@@ -124,7 +146,13 @@ bool WidgetGood::event(QEvent* event)
     return QWidget::event(event);
 }
 
-void WidgetGood::onflicker(){
-    flickerOn = !flickerOn;
+void WidgetGood::onTakeFlicker(){
+    takeFlickerOn = !takeFlickerOn;
+    update();
+}
+
+void WidgetGood::onPutFlicker()
+{
+    putFlickerOn = !putFlickerOn;
     update();
 }

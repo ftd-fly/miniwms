@@ -39,15 +39,20 @@ void CenterWidget::init()
 
     QPushButton *takeABtn = new QPushButton(QStringLiteral("取走一个A"));
     QPushButton *takeBBtn = new QPushButton(QStringLiteral("取走一个B"));
+    QPushButton *clearBtn = new QPushButton(QStringLiteral("清空所有"));
 
     connect(takeABtn,SIGNAL(clicked(bool)),this,SLOT(onBtnA()));
     connect(takeBBtn,SIGNAL(clicked(bool)),this,SLOT(onBtnB()));
+    connect(clearBtn,SIGNAL(clicked(bool)),this,SLOT(clear()));
+
 
     QHBoxLayout *testTwoBtnHlayout = new QHBoxLayout;
     testTwoBtnHlayout->addStretch(1);
     testTwoBtnHlayout->addWidget(takeABtn);
-    testTwoBtnHlayout->addStretch(1);
+    testTwoBtnHlayout->addSpacing(100);
     testTwoBtnHlayout->addWidget(takeBBtn);
+    testTwoBtnHlayout->addSpacing(100);
+    testTwoBtnHlayout->addWidget(clearBtn);
     testTwoBtnHlayout->addStretch(1);
 
     //显示累计值
@@ -147,21 +152,21 @@ void CenterWidget::queryNumber()
 //取走一个A货物
 void CenterWidget::takeGoodA()
 {
-    if(nextIndexRowA==-1||nextIndexColumnA==-1)
+    if(nextTakeRowA==-1||nextTakeColumnA==-1)
     {
         QMessageBox::critical(this,QStringLiteral("错误"),QStringLiteral("当前位置无货物"),QMessageBox::Ok);
         return ;
     }
 
     //判断当前位置是否有货
-    if(widgetGoods.at(nextIndexRowA*column+nextIndexColumnA)->hasGood()<=0)
+    if(widgetGoods.at(nextTakeRowA*column+nextTakeColumnA)->hasGood()<=0)
     {
         QMessageBox::critical(this,QStringLiteral("错误"),QStringLiteral("当前位置无货物"),QMessageBox::Ok);
         return ;
     }
 
     //取走货物，对index进行下移
-    widgetGoods.at(nextIndexRowA*column+nextIndexColumnA)->setHasGood(0);
+    widgetGoods.at(nextTakeRowA*column+nextTakeColumnA)->setHasGood(0);
 
     //保存配置文件中
     save();
@@ -172,14 +177,14 @@ void CenterWidget::takeGoodA()
 //取走一个B货物
 void CenterWidget::takeGoodB()
 {
-    if(widgetGoods.at(nextIndexRowB*column+nextIndexColumnB)->hasGood()<=0)
+    if(widgetGoods.at(nextTakeRowB*column+nextTakeColumnB)->hasGood()<=0)
     {
         QMessageBox::critical(this,QStringLiteral("错误"),QStringLiteral("当前位置无货物"),QMessageBox::Ok);
         return ;
     }
 
     //取走货物，对index进行下移
-    widgetGoods.at(nextIndexRowB*column+nextIndexColumnB)->setHasGood(0);
+    widgetGoods.at(nextTakeRowB*column+nextTakeColumnB)->setHasGood(0);
 
     //保存配置文件中
     save();
@@ -211,6 +216,21 @@ void CenterWidget::onBtnB()
     controlCenter.onButtn(0x82);
 }
 
+void CenterWidget::clear()
+{
+    QMessageBox::StandardButton rb = QMessageBox::question(this, QStringLiteral("确认清空"), QStringLiteral("确认清空所有的货物?"), QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
+    if(rb == QMessageBox::Yes)
+    {
+        foreach (auto good, widgetGoods) {
+            good->setHasGood(0);
+        }
+
+        save();
+
+        updateNext();
+    }
+}
+
 void CenterWidget::updateNext()
 {
     minA = 0;
@@ -224,8 +244,8 @@ void CenterWidget::updateNext()
             if(j<rowA){
                 if(id>0 && (id<minA || minA ==0)){
                     minA = id;
-                    nextIndexColumnA = i;
-                    nextIndexRowA = j;
+                    nextTakeColumnA = i;
+                    nextTakeRowA = j;
                 }
                 if(id>maxA){
                     maxA = id;
@@ -233,8 +253,8 @@ void CenterWidget::updateNext()
             }else{
                 if(id>0 && (id<minB|| minB ==0)){
                     minB = id;
-                    nextIndexColumnB = i;
-                    nextIndexRowB = j;
+                    nextTakeColumnB = i;
+                    nextTakeRowB = j;
                 }
                 if(id>maxB){
                     maxB = id;
@@ -244,40 +264,135 @@ void CenterWidget::updateNext()
     }
 
     foreach (auto p, widgetGoods) {
-        p->setFlicker(false);
+        p->setTakeFlicker(false);
     }
 
     if(minA<=0){
-        nextIndexColumnA = -1;
-        nextIndexRowA = -1;
+        nextTakeColumnA = -1;
+        nextTakeRowA = -1;
     }else{
-        widgetGoods.at(nextIndexRowA*column+nextIndexColumnA)->setFlicker(true);
+        widgetGoods.at(nextTakeRowA*column+nextTakeColumnA)->setTakeFlicker(true);
     }
 
     if(minB<=0){
-        nextIndexColumnB = -1;
-        nextIndexRowB = -1;
+        nextTakeColumnB = -1;
+        nextTakeRowB = -1;
     }else{
-        widgetGoods.at(nextIndexRowB*column+nextIndexColumnB)->setFlicker(true);
+        widgetGoods.at(nextTakeRowB*column+nextTakeColumnB)->setTakeFlicker(true);
     }
+
+    //计算takeA的位置
+    bool findA = false;
+    for(int i=0;i<rowA;++i)
+    {
+        bool rowHasGood = false;//该行是否有货
+        for(int j=0;j<column;++j){
+            if(widgetGoods.at(i*column + j)->hasGood()>0){
+                rowHasGood = true;
+                break;
+            }
+        }
+        if(!rowHasGood)
+        {
+            //这行没货，那么放货位置就是头部位置
+            nextPutColumnA = 0;
+            nextPutRowA = i;
+            findA = true;
+            break;
+        }else{
+            //找到第一个有货后边无货的位置
+            if(widgetGoods.at(i*column+column-1)->hasGood()>0){
+                //该行最后一个也是货物，那么这行没法放货物了
+                continue;
+            }else{
+                for(int j=column-2;j>=0;--j){
+                    if(widgetGoods.at(i*column + j)->hasGood()>0){
+                        //该行最后一个货物的位置是j+1
+                        nextPutColumnA = j+1;
+                        nextPutRowA = i;
+                        findA = true;
+                        break;
+                    }
+                }
+                if(findA)break;
+            }
+        }
+    }
+
+    //计算takeB的位置
+    bool findB = false;
+    for(int i=rowA;i<row;++i)
+    {
+        bool rowHasGood = false;//该行是否有货
+        for(int j=0;j<column;++j){
+            if(widgetGoods.at(i*column + j)->hasGood()>0){
+                rowHasGood = true;
+                break;
+            }
+        }
+        if(!rowHasGood)
+        {
+            //这行没货，那么放货位置就是头部位置
+            nextPutColumnB = 0;
+            nextPutRowB = i;
+            findB = true;
+            break;
+        }else{
+            //找到第一个有货后边无货的位置
+            if(widgetGoods.at(i*column+column-1)->hasGood()>0){
+                //该行最后一个也是货物，那么这行没法放货物了
+                continue;
+            }else{
+                for(int j=column-2;j>=0;--j){
+                    if(widgetGoods.at(i*column + j)->hasGood()>0){
+                        //该行最后一个货物的位置是j+1
+                        nextPutColumnB = j+1;
+                        nextPutRowB = i;
+                        findB = true;
+                        break;
+                    }
+                }
+                if(findB)break;
+            }
+        }
+    }
+    if(!findA){
+        nextPutColumnA = -1;
+        nextPutRowA = -1;
+    }
+    if(!findB){
+        nextPutColumnB = -1;
+        nextPutRowB = -1;
+    }
+
+    for(int i=0;i<row;++i)
+    {
+        for(int j=0;j<column;++j){
+            if( (i==nextPutRowA && j == nextPutColumnA) || (i==nextPutRowB && j == nextPutColumnB))
+                widgetGoods.at(i*column+j)->setPutFlicker(true);
+            else
+                widgetGoods.at(i*column+j)->setPutFlicker(false);
+        }
+    }
+
 }
 
 int CenterWidget::getNextAStation()
 {
-    if(nextIndexRowA*column+nextIndexColumnA > widgetGoods.length())return -1;
-    if(widgetGoods.at(nextIndexRowA*column+nextIndexColumnA)->hasGood()>0)
+    if(nextTakeRowA*column+nextTakeColumnA > widgetGoods.length())return -1;
+    if(widgetGoods.at(nextTakeRowA*column+nextTakeColumnA)->hasGood()>0)
     {
-        return  nextIndexRowA*column+nextIndexColumnA;
+        return  nextTakeRowA*column+nextTakeColumnA;
     }
     return -1;
 }
 
 int CenterWidget::getNextBStation()
 {
-    if(nextIndexRowB*column+nextIndexColumnB > widgetGoods.length())return -1;
-    if(widgetGoods.at(nextIndexRowB*column+nextIndexColumnB)->hasGood()>0)
+    if(nextTakeRowB*column+nextTakeColumnB > widgetGoods.length())return -1;
+    if(widgetGoods.at(nextTakeRowB*column+nextTakeColumnB)->hasGood()>0)
     {
-        return  nextIndexRowB*column+nextIndexColumnB;
+        return  nextTakeRowB*column+nextTakeColumnB;
     }
     return -1;
 }

@@ -13,12 +13,15 @@ public:
     int hasGood(){return iHasGood;}
     void setHasGood(int _iHasGood){iHasGood=_iHasGood;update();}
 
-    void setFlicker(bool f);
+    void setTakeFlicker(bool f);
+
+    void setPutFlicker(bool f);
 
 signals:
 
 public slots:
-    void onflicker();
+    void onTakeFlicker();
+    void onPutFlicker();
 protected:
     void paintEvent(QPaintEvent *event);
     bool event(QEvent* e);
@@ -28,8 +31,10 @@ private:
     bool needRotate;//是否需要旋转
     bool mouseover;
     int type;
-    QTimer flickerTimer;
-    bool flickerOn;
+    QTimer takeFlickerTimer;
+    bool takeFlickerOn;
+    QTimer putFlickerTimer;
+    bool putFlickerOn;
 };
 
 #endif // WIDGETGOOD_H

@@ -33,6 +33,8 @@ public slots:
 
     void onBtnB();
 
+    void clear();
+
 protected:
     //将按钮、货物，摆放在合适的位置
     virtual void initGoodPosition() = 0;
@@ -47,10 +49,15 @@ protected:
     QGroupBox * centergroup;
 
 private:
-    int nextIndexRowA = -1;
-    int nextIndexColumnA = -1;
-    int nextIndexRowB = -1;
-    int nextIndexColumnB = -1;
+    int nextTakeRowA = -1;
+    int nextTakeColumnA = -1;
+    int nextTakeRowB = -1;
+    int nextTakeColumnB = -1;
+
+    int nextPutRowA = -1;
+    int nextPutColumnA = -1;
+    int nextPutRowB = -1;
+    int nextPutColumnB = -1;
 
     int minA = 0;//下一个要取A货物的ID 用于计算下一个要取A的位置
     int minB = 0;//下一个要取B货物的ID 用于计算下一个要取B的位置
