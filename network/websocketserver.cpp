@@ -33,7 +33,7 @@ bool WebsocketServer::sendToAll(QByteArray data)
 {
     bool result = true;
     for (QWebSocket *pClient : qAsConst(m_clients)) {
-        if(!pClient->sendBinaryMessage(data)==data.length())result=false;
+        if(pClient->sendBinaryMessage(data)!=data.length())result=false;
     }
     return result;
 }

@@ -1,9 +1,9 @@
 ﻿#include "widgetgood.h"
 #include "global.h"
 
-WidgetGood::WidgetGood(int _code, int _type, bool _bHasGood, bool _needRotate, QWidget *parent) : QWidget(parent),
+WidgetGood::WidgetGood(int _code, int _type, int _iHasGood, bool _needRotate, QWidget *parent) : QWidget(parent),
     code(_code),
-    bHasGood(_bHasGood),
+    iHasGood(_iHasGood),
     needRotate(_needRotate),
     mouseover(false),
     type(_type),
@@ -14,7 +14,7 @@ WidgetGood::WidgetGood(int _code, int _type, bool _bHasGood, bool _needRotate, Q
     else
         this->setFixedSize(configure.getValue("ui/good_height").toInt(),configure.getValue("ui/good_width").toInt());
 
-    this->setToolTip(QString(QStringLiteral("堆放点%1%2")).arg(_type==1?"A":"B").arg(code));
+    this->setToolTip(QString(QStringLiteral("堆放点%1_%2_%3")).arg(_type==1?"A":"B").arg(1+((code-1)/column)).arg(1+(code-1)%column));
     flickerTimer.setInterval(800);
     connect(&flickerTimer,&QTimer::timeout,this,&WidgetGood::onflicker);
 }
@@ -33,7 +33,6 @@ void WidgetGood::paintEvent(QPaintEvent *event)
     painter.save();
 
     //画轮廓
-
     QPen pen;
     if(mouseover){
         pen.setWidth(1);
@@ -48,7 +47,7 @@ void WidgetGood::paintEvent(QPaintEvent *event)
     }
 
     QColor c("#0070C0");
-    if(!bHasGood)c = QColor("grey");
+    if(iHasGood<=0)c = QColor("grey");
     painter.setPen(pen);
     painter.setBrush(c);
     QRect rectTemp = this->rect();
@@ -68,7 +67,7 @@ void WidgetGood::paintEvent(QPaintEvent *event)
     QFont font;
     font.setFamily("黑体");
     // 大小
-    font.setPointSize(25);
+    font.setPointSize(14);
     // 设置字符间距
     font.setLetterSpacing(QFont::AbsoluteSpacing, 5);
 
@@ -77,10 +76,17 @@ void WidgetGood::paintEvent(QPaintEvent *event)
     QString text;
     if(type==1)text= QString("A");
     if(type==2)text= QString("B");
-    text+= QString("%1").arg(code);
-    pen.setColor("black");
-    painter.setPen(pen);
-    painter.drawText(rect(),Qt::AlignCenter, text);
+    if(iHasGood<=0){
+        text+= QString("%1_%2").arg(1+(code-1)/column).arg(1+(code-1)%column);
+        pen.setColor("black");
+        painter.setPen(pen);
+        painter.drawText(rect(),Qt::AlignCenter, text);
+    }else{
+        text+= QString("[%1]").arg(iHasGood);
+        pen.setColor("red");
+        painter.setPen(pen);
+        painter.drawText(rect(),Qt::AlignCenter, text);
+    }
 
     painter.restore();
     QWidget::paintEvent(event);
@@ -94,6 +100,26 @@ bool WidgetGood::event(QEvent* event)
     }else if (event->type()==QEvent::Leave){
         mouseover = false;
         update();
+    }else if(event->type() == QEvent::MouseButtonPress){
+        QMouseEvent *e = static_cast<QMouseEvent*> (event);
+        if(e->button() == Qt::LeftButton && iHasGood<=0)
+        {
+            QString text;
+            if(type==1)text= QString("A");
+            if(type==2)text= QString("B");
+
+            text+= QString("%1_%2").arg(1+(code-1)/column).arg(1+(code-1)%column);
+            //左键单机，进行添加
+            QMessageBox::StandardButton rb = QMessageBox::warning(this,tr("确定摆放"),tr("确认在")+text+tr("摆放货物？"),QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
+            if(rb == QMessageBox::Yes)
+            {
+                if(type==1){
+                    centerWidget->addGood((code-1)/column,(code-1)%column);
+                }else{
+                    centerWidget->addGood(rowA+(code-1)/column,(code-1)%column);
+                }
+            }
+        }
     }
     return QWidget::event(event);
 }

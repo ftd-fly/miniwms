@@ -45,23 +45,3 @@ int getRandom(int maxRandom)
     return qrand();
 }
 
-
-int getNextAStation()
-{
-    if(nextTakeRowA*column+nextTakeColumnA > widgetGoods.length())return -1;
-    if(widgetGoods.at(nextTakeRowA*column+nextTakeColumnA)->hasGood())
-    {
-        return  nextTakeRowA*column+nextTakeColumnA;
-    }
-    return -1;
-}
-
-int getNextBStation()
-{
-    if(nextTakeRowB*column+nextTakeColumnB > widgetGoods.length())return -1;
-    if(widgetGoods.at(nextTakeRowB*column+nextTakeColumnB)->hasGood())
-    {
-        return  nextTakeRowB*column+nextTakeColumnB;
-    }
-    return -1;
-}

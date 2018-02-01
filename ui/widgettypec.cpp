@@ -14,14 +14,10 @@ void WidgetTypeC::initGoodPosition()
     QGridLayout *gridlayout = new QGridLayout;
 
     for(int j=0;j<row;++j)
-    {
-        gridlayout->addWidget(translationButtons.at(j),j,0,1,1,Qt::AlignCenter);
-
-        gridlayout->addWidget(fillButtons.at(j),j,1,1,1,Qt::AlignCenter);
-
+    {       
         for(int i=column;i>0;--i)
         {
-            gridlayout->addWidget(widgetGoods.at(j*column+column-i),j,2+i,1,1,Qt::AlignCenter);
+            gridlayout->addWidget(widgetGoods.at(j*column+column-i),j,i,1,1,Qt::AlignCenter);
         }
     }
 

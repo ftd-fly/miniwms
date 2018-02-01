@@ -9,7 +9,7 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
     //设置默认的尺寸为当前屏幕分辨率
-    this->setMinimumSize(1560,900);
+    this->setMinimumSize(1920,1080);
     //载入CentralWidget
     if(configure.getValue("solution/type").toString() == "A")
     {

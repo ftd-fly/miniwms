@@ -14,6 +14,12 @@ class CenterWidget : public QWidget
 public:
     explicit CenterWidget(QWidget *parent = nullptr);
 
+    int getNextAStation();
+
+    int getNextBStation();
+
+    void addGood(int add_row,int add_column);
+
 signals:
 
 public slots:
@@ -34,31 +40,28 @@ protected:
     //初始化
     void init();
 private slots:
-    //填满一行货物
-    void fillRow();
-
-    //平移一行货物
-    void translation();
-
     //查询完成数量
     void queryNumber();
 protected:
 
-    QList<QPushButton *> fillButtons;//补满一行货
-
-    QList<QPushButton *> translationButtons;//平移一行货A
-
     QGroupBox * centergroup;
 
 private:
+    int nextIndexRowA = -1;
+    int nextIndexColumnA = -1;
+    int nextIndexRowB = -1;
+    int nextIndexColumnB = -1;
 
-
-
-    //更新按钮、闪烁
-    void updateBtnsFlickers();
+    int minA = 0;//下一个要取A货物的ID 用于计算下一个要取A的位置
+    int minB = 0;//下一个要取B货物的ID 用于计算下一个要取B的位置
+    int maxA = 0;//当前A的最大ID值，用于计算下一个添加的A的ID（=maxA+1）
+    int maxB = 0;//当前B的最大ID值，用于计算下一个添加的A的ID（=max+1）
 
     //保存到配置文件
     void save();
+
+    //获取下一个要去的A和B的坐标
+    void updateNext();
 
     QLCDNumber *tAll;
     QLCDNumber *tA;

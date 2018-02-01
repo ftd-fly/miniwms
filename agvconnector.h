@@ -30,6 +30,7 @@ public:
 signals:
     void error();//发生错误
     void finish(int _taskId);//完成了一个任务
+    void cancel(int _taskId);//取消了一个任务
 public slots:
     void onRecv(QString str);
     void reconnect();

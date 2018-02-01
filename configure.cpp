@@ -24,7 +24,6 @@ void Configure::load()
     //这里有两种方案。
     //方案1.这里判定有些设置是否存在，如果不存在，那么在添加默认值.
     //方案2.在getvalue调用后，判断isvalid。然后给默认值.
-
     //这里讲采用方案1，其他处的代码会规整很多
     if(!config_map.contains("solution/type")){
         //方案A[36个货物存放点]

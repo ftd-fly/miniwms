@@ -15,47 +15,22 @@ void CenterWidget::init()
     column = configure.getValue("solution"+solutionPrefix+"/column").toInt();
     rowA = configure.getValue("solution"+solutionPrefix+"/rowA").toInt();
 
-    //载入每行的endpoint
-    endPoints.clear();
-    for(int i=0;i<row;++i){
-        endPoints.push_back(configure.getValue(QString("solution"+solutionPrefix+"/endpoint/%1").arg(i)).toInt());
-    }
-
-    //载入当前取货行和列
-    nextTakeColumnA = configure.getValue("solution"+solutionPrefix+"/nextTakeColumnA").toInt();
-    nextTakeRowA = configure.getValue("solution"+solutionPrefix+"/nextTakeRowA").toInt();
-    nextTakeColumnB = configure.getValue("solution"+solutionPrefix+"/nextTakeColumnB").toInt();
-    nextTakeRowB = configure.getValue("solution"+solutionPrefix+"/nextTakeRowB").toInt();
-
     //初始化所有的按钮、货物
     for(int j=0;j<row;++j)
     {
-        //添加两个按钮
-        QPushButton *traBtn = new QPushButton(QStringLiteral("该行货物平移→"),this);
-        QSizePolicy sp_retain = traBtn->sizePolicy();
-        sp_retain.setRetainSizeWhenHidden(true);
-        traBtn->setSizePolicy(sp_retain);
-        translationButtons.append(traBtn);
-        connect(traBtn,SIGNAL(clicked(bool)),this,SLOT(translation()));
-
-        QPushButton *fillBtn = new QPushButton(QStringLiteral("该行货物已补满"),this);
-        QSizePolicy sp_retain2 = fillBtn->sizePolicy();
-        sp_retain2.setRetainSizeWhenHidden(true);
-        fillBtn->setSizePolicy(sp_retain2);
-        fillButtons.append(fillBtn);
-        connect(fillBtn,SIGNAL(clicked(bool)),this,SLOT(fillRow()));
-
         for(int i=0;i<column;++i)
         {
             int type = 1;
             if(j>=rowA)type=2;
             int id = i+j*column;
             if(type==2)id=i+(j-rowA)*column;
-            bool hasGood = configure.getValue(QString("solution"+solutionPrefix+"/hasGood/%1/%2").arg(j).arg(i)).toBool();
+            int hasGood = configure.getValue(QString("solution"+solutionPrefix+"/hasGood/%1/%2").arg(j).arg(i)).toInt();
             WidgetGood *good = new WidgetGood(id+1,type,hasGood,solutionPrefix=="B");//方案B中，货物是旋转90°放置的
             widgetGoods.append(good);
         }
     }
+
+    updateNext();
 
     centergroup = new QGroupBox(QStringLiteral("存放区"));
 
@@ -115,7 +90,7 @@ void CenterWidget::init()
     countlayout->addWidget(todayB);
     countlayout->addWidget(tB);
     countlayout->addStretch(1);
-    countlayout->setMargin(40);
+    countlayout->setMargin(10);
     countlayout->setSpacing(10);
 
 
@@ -131,101 +106,11 @@ void CenterWidget::init()
     vlayout->addStretch(1);
     vlayout->addItem(testTwoBtnHlayout);
     vlayout->addItem(hlayout);
-    vlayout->addStretch(1);
+    vlayout->addStretch(3);
 
     setLayout(vlayout);
-    updateBtnsFlickers();
 
     updateNumberTimer.start();
-}
-
-//填满一行货物
-void CenterWidget::fillRow()
-{
-    QPushButton *clickedButton = qobject_cast<QPushButton *>(sender());
-    int index = -1 ;
-    for(int i=0;i<fillButtons.length();++i ){
-        if(fillButtons.at(i) == clickedButton){
-            index = i;
-            break;
-        }
-    }
-
-    assert(index != -1);
-    //检查该行是否为空
-    for(int i=column*index;i<column*(index+1);++i)
-    {
-        if(widgetGoods.at(i)->hasGood()){
-            //这行还有货物
-            QMessageBox::critical(this,QStringLiteral("错误"),QStringLiteral("该行尚有余货！"),QMessageBox::Ok);
-            return ;
-        }
-    }
-
-    QMessageBox::StandardButton rb = QMessageBox::question(this,QStringLiteral("确认"),QStringLiteral("确认该行已填满？"),QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
-    if(rb == QMessageBox::Yes)
-    {
-        for(int i=column*index;i<column*(index+1);++i)
-        {
-            widgetGoods.at(i)->setHasGood(true);
-        }
-        save();
-        updateBtnsFlickers();
-    }
-}
-
-//平移一行货物
-void CenterWidget::translation()
-{
-    //判断该行货物补满！
-    QPushButton *clickedButton = qobject_cast<QPushButton *>(sender());
-    int index = -1 ;
-    for(int i=0;i<translationButtons.length();++i ){
-        if(translationButtons.at(i) == clickedButton){
-            index = i;
-            break;
-        }
-    }
-    assert(index != -1);
-
-    //检查该行是否为空
-    int goodAmount = 0;
-    for(int i=column*index;i<column*(index+1);++i)
-    {
-        if(widgetGoods.at(i)->hasGood())++goodAmount;
-    }
-    if(goodAmount==0)
-    {
-        QMessageBox::critical(this,QStringLiteral("错误"),QStringLiteral("该行没有货物可移动"),QMessageBox::Ok);
-        return ;
-    }
-    if(goodAmount==column){
-        QMessageBox::critical(this,QStringLiteral("错误"),QStringLiteral("该行货物是满的，无法移动"),QMessageBox::Ok);
-        return ;
-    }
-
-    QMessageBox::StandardButton rb = QMessageBox::question(this,QStringLiteral("确认"),QStringLiteral("确认该行原来货物已平移并将后面空余填充？"),QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
-    if(rb == QMessageBox::Yes)
-    {
-        //OK接下来的逻辑就有一点点意思了
-        //给这行一个特殊的标记(endPoint);理论上该行的endpoint都是0；如果平移了，endpoint不再是0。
-        endPoints[index] = column - goodAmount;
-        //该行货物补齐
-        for(int i=column*index;i<column*(index+1);++i)
-        {
-            widgetGoods.at(i)->setHasGood(true);
-        }
-        save();
-        //更新当前取货位置
-        if(index<rowA)
-        {
-            nextTakeColumnA = 0;
-        }else{
-            nextTakeColumnB = 0;
-        }
-
-        updateBtnsFlickers();
-    }
 }
 
 void CenterWidget::queryNumber()
@@ -262,147 +147,49 @@ void CenterWidget::queryNumber()
 //取走一个A货物
 void CenterWidget::takeGoodA()
 {
-    //判断当前位置是否有货
-    if(!widgetGoods.at(nextTakeRowA*column+nextTakeColumnA)->hasGood())
+    if(nextIndexRowA==-1||nextIndexColumnA==-1)
     {
         QMessageBox::critical(this,QStringLiteral("错误"),QStringLiteral("当前位置无货物"),QMessageBox::Ok);
         return ;
     }
-    //取走货物，对index进行下移
-    widgetGoods.at(nextTakeRowA*column+nextTakeColumnA)->setHasGood(false);
-    nextTakeColumnA+=1;
 
-    if(nextTakeColumnA >= column -  endPoints.at(nextTakeRowA))
+    //判断当前位置是否有货
+    if(widgetGoods.at(nextIndexRowA*column+nextIndexColumnA)->hasGood()<=0)
     {
-        if(endPoints.at(nextTakeRowA) !=0){
-            endPoints[nextTakeRowA] = 0;
-        }
-        //指向下一行首个位置取货
-        nextTakeRowA+=1;
-        nextTakeColumnA = 0;
-        if(nextTakeRowA>=rowA){
-            nextTakeRowA = 0;
-        }
-
-        if(!widgetGoods.at(nextTakeRowA*column+nextTakeColumnA)->hasGood())
-        {
-            //如果首个位置没有货物，判断是否该行其他位置有货，指向该行剩余的
-            for(int columnIndex = nextTakeColumnA;columnIndex< column-endPoints.at(nextTakeRowA);++columnIndex)
-            {
-                if(widgetGoods.at(nextTakeRowA*column+columnIndex)->hasGood()){
-                    nextTakeColumnA = columnIndex;
-                    break;
-                }
-            }
-        }
+        QMessageBox::critical(this,QStringLiteral("错误"),QStringLiteral("当前位置无货物"),QMessageBox::Ok);
+        return ;
     }
+
+    //取走货物，对index进行下移
+    widgetGoods.at(nextIndexRowA*column+nextIndexColumnA)->setHasGood(0);
+
+    //保存配置文件中
     save();
-    //对按钮状态进行设置 对箭头进行设置
-    updateBtnsFlickers();
+
+    updateNext();
 }
 
 //取走一个B货物
 void CenterWidget::takeGoodB()
 {
-    if(!widgetGoods.at(nextTakeRowB*column+nextTakeColumnB)->hasGood())
+    if(widgetGoods.at(nextIndexRowB*column+nextIndexColumnB)->hasGood()<=0)
     {
         QMessageBox::critical(this,QStringLiteral("错误"),QStringLiteral("当前位置无货物"),QMessageBox::Ok);
         return ;
     }
 
     //取走货物，对index进行下移
-    widgetGoods.at(nextTakeRowB*column+nextTakeColumnB)->setHasGood(false);
-    nextTakeColumnB+=1;
-    if(nextTakeColumnB >= column - endPoints.at(nextTakeRowB))
-    {
-        if(endPoints.at(nextTakeRowB) !=0)
-        {
-            endPoints[nextTakeRowB] = 0;
-        }
-        nextTakeRowB+=1;
-        nextTakeColumnB = 0;
-        if(nextTakeRowB>=row){
-            nextTakeRowB = rowA;
-        }
+    widgetGoods.at(nextIndexRowB*column+nextIndexColumnB)->setHasGood(0);
 
-        if(!widgetGoods.at(nextTakeRowB*column+nextTakeColumnB)->hasGood())
-        {
-            //如果首个位置没有货物，判断是否该行其他位置有货，指向该行剩余的
-            for(int columnIndex = nextTakeColumnB;columnIndex< column-endPoints.at(nextTakeRowB);++columnIndex)
-            {
-                if(widgetGoods.at(nextTakeRowB*column+columnIndex)->hasGood()){
-                    nextTakeColumnB = columnIndex;
-                    break;
-                }
-            }
-        }
-    }
-
+    //保存配置文件中
     save();
-    //对按钮状态进行设置 对箭头进行设置
-    updateBtnsFlickers();
-}
 
-//更新按钮、闪烁
-void CenterWidget::updateBtnsFlickers()
-{
-    for(int rowindex=0;rowindex<row;++rowindex)
-    {
-        //查看该行有多少货物
-        int goodAmount = 0;
-        for(int k=column*rowindex;k<column*(rowindex+1);++k)
-        {
-            if(widgetGoods.at(k)->hasGood())++goodAmount;
-        }
-
-        if(goodAmount == 0){
-            fillButtons.at(rowindex)->setEnabled(true);
-            fillButtons.at(rowindex)->setVisible(true);
-        }else{
-            fillButtons.at(rowindex)->setEnabled(false);
-            fillButtons.at(rowindex)->setVisible(false);
-        }
-
-        if(goodAmount>0 && goodAmount < column && endPoints.at(rowindex)==0){
-            translationButtons.at(rowindex)->setEnabled(true);
-            translationButtons.at(rowindex)->setVisible(true);
-        }else{
-            translationButtons.at(rowindex)->setEnabled(false);
-            translationButtons.at(rowindex)->setVisible(false);
-        }
-
-        for(int columnindex = 0;columnindex<column;++columnindex)
-        {
-            if((rowindex==nextTakeRowA&&columnindex==nextTakeColumnA) ||(rowindex == nextTakeRowB && columnindex==nextTakeColumnB)){
-                widgetGoods.at(rowindex*column+columnindex)->setFlicker(true);
-            }else{
-                widgetGoods.at(rowindex*column+columnindex)->setFlicker(false);
-            }
-        }
-    }
+    updateNext();
 }
 
 //保存状态到配置文件
 void CenterWidget::save()
 {
-    //需要保存的内容如下：
-    //1、row / column
-    //    configure.setValue("solution"+solutionPrefix+"/row",row);
-    //    configure.setValue("solution"+solutionPrefix+"/column",column);
-
-    //2、endpoint
-    for(int i=0;i<row;++i){
-        configure.setValue(QString("solution"+solutionPrefix+"/endpoint/%1").arg(i),endPoints.at(i));
-    }
-
-    //3、nextRowA/nextColumnA
-    configure.setValue("solution"+solutionPrefix+"/nextTakeColumnA",nextTakeColumnA);
-    configure.setValue("solution"+solutionPrefix+"/nextTakeRowA",nextTakeRowA);
-
-    //4、nextRowB/nextColumnB
-    configure.setValue("solution"+solutionPrefix+"/nextTakeColumnB",nextTakeColumnB);
-    configure.setValue("solution"+solutionPrefix+"/nextTakeRowB",nextTakeRowB);
-
     //5、每个点位是否有货  hasgood
     for(int i=0;i<row;++i){
         for(int j=0;j<column;++j){
@@ -422,4 +209,101 @@ void CenterWidget::onBtnA()
 void CenterWidget::onBtnB()
 {
     controlCenter.onButtn(0x82);
+}
+
+void CenterWidget::updateNext()
+{
+    minA = 0;
+    minB = 0;
+    maxA = 0;
+    maxB = 0;
+    for(int i=0;i<column;++i)
+    {
+        for(int j=0;j<row;++j){
+            int id = widgetGoods.at(j*column+i)->hasGood();
+            if(j<rowA){
+                if(id>0 && (id<minA || minA ==0)){
+                    minA = id;
+                    nextIndexColumnA = i;
+                    nextIndexRowA = j;
+                }
+                if(id>maxA){
+                    maxA = id;
+                }
+            }else{
+                if(id>0 && (id<minB|| minB ==0)){
+                    minB = id;
+                    nextIndexColumnB = i;
+                    nextIndexRowB = j;
+                }
+                if(id>maxB){
+                    maxB = id;
+                }
+            }
+        }
+    }
+
+    foreach (auto p, widgetGoods) {
+        p->setFlicker(false);
+    }
+
+    if(minA<=0){
+        nextIndexColumnA = -1;
+        nextIndexRowA = -1;
+    }else{
+        widgetGoods.at(nextIndexRowA*column+nextIndexColumnA)->setFlicker(true);
+    }
+
+    if(minB<=0){
+        nextIndexColumnB = -1;
+        nextIndexRowB = -1;
+    }else{
+        widgetGoods.at(nextIndexRowB*column+nextIndexColumnB)->setFlicker(true);
+    }
+}
+
+int CenterWidget::getNextAStation()
+{
+    if(nextIndexRowA*column+nextIndexColumnA > widgetGoods.length())return -1;
+    if(widgetGoods.at(nextIndexRowA*column+nextIndexColumnA)->hasGood()>0)
+    {
+        return  nextIndexRowA*column+nextIndexColumnA;
+    }
+    return -1;
+}
+
+int CenterWidget::getNextBStation()
+{
+    if(nextIndexRowB*column+nextIndexColumnB > widgetGoods.length())return -1;
+    if(widgetGoods.at(nextIndexRowB*column+nextIndexColumnB)->hasGood()>0)
+    {
+        return  nextIndexRowB*column+nextIndexColumnB;
+    }
+    return -1;
+}
+
+
+void CenterWidget::addGood(int add_row, int add_column)
+{
+    if(add_row<rowA){
+        //A
+        if(widgetGoods.at(add_row*column+add_column)->hasGood()>0)
+        {
+            QMessageBox::critical(NULL,QStringLiteral("错误"),QStringLiteral("该处已经存在货物"),QMessageBox::Ok);
+        }else{
+            widgetGoods.at(add_row*column+add_column)->setHasGood(++maxA);
+            save();
+            updateNext();
+        }
+    }else{
+        //B
+        if(widgetGoods.at(add_row*column+add_column)->hasGood()>0)
+        {
+            QMessageBox::critical(NULL,QStringLiteral("错误"),QStringLiteral("该处已经存在货物"),QMessageBox::Ok);
+        }else{
+            widgetGoods.at(add_row*column+add_column)->setHasGood(++maxB);
+            save();
+            updateNext();
+        }
+    }
 }

@@ -31,6 +31,8 @@ bool ControlCenter::init()
             AgvConnector *agv = new AgvConnector;
             agv->init(id,ip,port);
             connect(agv,SIGNAL(finish(int)),this,SLOT(onTaskFinish(int)));
+            connect(agv,SIGNAL(error()),this,SLOT(onError()));
+            connect(agv,SIGNAL(cancel(int)),this,SLOT(onTaskFinish(int)));//TODO:取消的任务也任务是完成了？
             agvs.push_back(agv);
         }else{
             qDebug() << "agv agv_ip_"<<id<<" config error!";
@@ -46,7 +48,6 @@ bool ControlCenter::init()
 
 void ControlCenter::onButtn(int address)
 {
-    static int kk = 0;
     if(address == 0x81 && task81Finish)
     {
         //产生一个A任务
@@ -67,6 +68,7 @@ void ControlCenter::onButtn(int address)
         }else{
             //存库失败！
             QMessageBox::critical(NULL,QStringLiteral("错误"),QStringLiteral("对新任务存库失败"),QMessageBox::Ok);
+            task81Finish = true;
         }
     }else if(address == 0x82 && task82Finish)
     {
@@ -88,6 +90,7 @@ void ControlCenter::onButtn(int address)
         }else{
             //存库失败！
             QMessageBox::critical(NULL,QStringLiteral("错误"),QStringLiteral("对新任务存库失败"),QMessageBox::Ok);
+            task82Finish = false;
         }
     }
 }
@@ -112,9 +115,9 @@ void ControlCenter::onTaskCheck()
     //获取下一个取货点
     int station;
     if(todoTasks.at(0).line == Task::LineA){
-        station = getNextAStation();
+        station = centerWidget->getNextAStation();
     }else{
-        station = getNextBStation();
+        station = centerWidget->getNextBStation();
     }
     if(station == -1)return ;
 
@@ -126,7 +129,7 @@ void ControlCenter::onTaskCheck()
         t.excuteAgv = agv->getId();
         t.task_excuteTime = QDateTime::currentDateTime();
         //更新任务执行时间/执行的车辆和站点
-        QString updateSql = "update agv_task set agv_station=?,excuteAgv=?,task_excuteTime=?  where id=?";;
+        QString updateSql = "update agv_task set station=?,excuteAgv=?,task_excuteTime=?  where id=?";;
         QStringList params;
         params<<QString("%1").arg(t.station)
              <<QString("%1").arg(t.excuteAgv)
@@ -145,8 +148,13 @@ void ControlCenter::onTaskCheck()
         if(t.line == Task::LineA)
             centerWidget->takeGoodA();
         else
-            centerWidget->takeGoodA();
+            centerWidget->takeGoodB();
     }
+}
+
+void ControlCenter::onError()
+{
+    QMessageBox::critical(NULL,QStringLiteral("错误"),QStringLiteral("AGV发生错误，请重启"),QMessageBox::Ok);
 }
 
 void ControlCenter::onTaskFinish(int taskId)

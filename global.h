@@ -54,6 +54,7 @@
 #include "ui/widgetgood.h"
 #include "controlcenter.h"
 #include "ui/centerwidget.h"
+
 //全局 变量
 extern const QString DATE_TIME_FORMAT;
 extern QString g_strExeRoot;
@@ -66,27 +67,14 @@ extern QString solutionPrefix;
 extern int row;//货物行数
 extern int column;//货物列数
 extern int rowA;//货物A的行数,row-rowA就是货物B的行数
-extern QList<int> endPoints;//考虑到平移的问题，用于标记该行是否执行到底，
 extern QList<WidgetGood *> widgetGoods;//所有的货物
 extern ControlCenter controlCenter;
-//标记下一个取货A的点
-extern int nextTakeColumnA;
-extern int nextTakeRowA;
-
-//标记下一个取货B的点
-extern int nextTakeRowB;
-extern int nextTakeColumnB;
 /////////////////////////////////////////////////////////
-
 
 //全局公用函数
 void QyhSleep(int msec);
 
 //随机一个[0,maxRandom)的数
 int getRandom(int maxRandom);
-
-int getNextAStation();
-
-int getNextBStation();
 
 #endif // GLOBAL_H

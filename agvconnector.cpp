@@ -82,12 +82,17 @@ void AgvConnector::processOneJson(QString json)
     {
         hasInit = true;
     }
-    if(result["msg"].toMap()["waypoint_name"].toString().length()>0&&result["msg"].toMap()["status"].toString().length()>0){
+
+    QMap<QString, QVariant> mm = result["msg"].toMap();
+
+    if(result["msg"].toMap()["status"].toString().length()>0){
         status = result["msg"].toMap()["status"].toInt();
         if(status == COMPLETED && lastStatus != status){
             emit finish(taskId);
         }else if(status == ERROR && lastStatus != status){
             emit error();
+        }else if(status == CANCELLED && lastStatus != status){
+            emit cancel(taskId);
         }
         lastStatus = status;
     }
@@ -96,7 +101,13 @@ void AgvConnector::processOneJson(QString json)
 //从那条线上，运送到那个站点
 bool AgvConnector::sendTask(int _taskId, int line, int station)
 {
-    QString goal_name = QString("Line_%1ToCache_%2").arg(line).arg(station);
+    QString goal_name;
+    if(line== Task::LineA){
+        goal_name = QString("cache_A_%1_%2").arg(1+station/column).arg(1+station%column);
+    }else{
+        goal_name = QString("cache_B_%1_%2").arg(1+station/column-rowA).arg(1+station%column);
+    }
+    //QString goal_name = QString("Line_%1ToCache_%2").arg(line).arg(station);
 
     QVariantMap msg;
     msg.insert("goal_name", goal_name);

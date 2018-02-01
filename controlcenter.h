@@ -18,6 +18,7 @@ public slots:
     void onButtn(int address);
     void onTaskCheck();
     void onTaskFinish(int taskId);
+    void onError();
 private:
     RadioFrequency rf;
     bool task81Finish;
