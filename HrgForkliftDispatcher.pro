@@ -39,7 +39,8 @@ SOURCES += \
     agvconnector.cpp \
     radiofrequency.cpp \
     crc16.cpp \
-    ui/centerwidget.cpp
+    ui/centerwidget.cpp \
+    ui/qyhclicklabel.cpp
 
 HEADERS += \
         mainwindow.h \
@@ -57,7 +58,8 @@ HEADERS += \
     radiofrequency.h \
     crc16.h \
     task.h \
-    ui/centerwidget.h
+    ui/centerwidget.h \
+    ui/qyhclicklabel.h
 
 
 RESOURCES += \

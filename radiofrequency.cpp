@@ -8,7 +8,7 @@ RadioFrequency::RadioFrequency(QObject *parent) : QObject(parent)
     serial = new QSerialPort(this);
     connect(serial, &QSerialPort::readyRead,this, &RadioFrequency::onRead);
 
-    queryTimer.setInterval(250);
+    queryTimer.setInterval(150);
     connect(&queryTimer,&QTimer::timeout,this,&RadioFrequency::queryStatus);
 }
 
@@ -59,7 +59,22 @@ bool RadioFrequency::init()
     if(!serial->open(QIODevice::ReadWrite))
     {
         qDebug()<<"serial open fail!"<< serial->errorString();
-        QMessageBox::warning(NULL,QStringLiteral("错误"),QStringLiteral("无法打开串口"),QMessageBox::Ok);
+
+        QMessageBox mbox(QMessageBox::NoIcon,QStringLiteral("错误"),QStringLiteral("无法打开串口"),QMessageBox::Yes);
+        mbox.setStyleSheet(
+                    "QPushButton {"
+                    "font:30px;"
+                    "padding-left:100px;"
+                    "padding-right:100px;"
+                    "padding-top:40px;"
+                    "padding-bottom:40px;"
+                    "}"
+                    "QLabel { font:30px;}"
+                    );
+        mbox.setButtonText (QMessageBox::Yes,QStringLiteral("确 定"));
+        mbox.setButtonText (QMessageBox::No,QStringLiteral("取 消"));
+        mbox.exec();
+
         return false;
     }
     queryTimer.start();
@@ -74,14 +89,19 @@ void RadioFrequency::onRead()
     buffer += serial->readAll();
     while(true)
     {
-        int index81 = buffer.indexOf(0x81);
-        int index82 = buffer.indexOf(0x82);
-        if(index81<0&&index82<0)return ;
-        int index = index81;
-        if(index81<0)index = index82;
-        if(index81>=0 && index82>=0 && index82<index81)index = index82;
+        int indexA = buffer.indexOf(RADOI_FREQUENCY_ADDRESS_A);
+        int indexB = buffer.indexOf(RADOI_FREQUENCY_ADDRESS_B);
+        if(indexA<0&&indexB<0)return ;
+        int index = indexA;
+        if(indexA<0)index = indexB;
+        if(indexA>=0 && indexB>=0){
+            if(indexB<indexA)
+                index=indexB;
+            else
+                index = indexA;
+        }
         if(index+7>=buffer.length())return ;
-        //这里判定了要处理的是不是index81
+        //这里判定了要处理的是不是整个包
         if(0x03 == buffer.at(index+1))
         {
             //长度为7
@@ -111,7 +131,6 @@ void RadioFrequency::lightOn(int address)
     const unsigned char str[] = {(address&0xff),  0x10, 0x00, 0x02, 0x00, 0x01, 0x02,0x00,0x01,};
     QByteArray sendCmd(reinterpret_cast<const char*>(&str[0]),std::extent<decltype(str)>::value);
 
-//    QByteArray sendCmd =
     qint16 crc = checksum(sendCmd);
     sendCmd += (char )(crc>>8 & 0xff);
     sendCmd += (char )(crc & 0xff);
@@ -136,23 +155,29 @@ void RadioFrequency::lightOff(int address)
 
 void RadioFrequency::queryStatus()
 {
-    const unsigned char str1[] = {0x81, 0x03, 0x00, 0x08, 0x00, 0x01,};
-    QByteArray query81(reinterpret_cast<const char*>(&str1[0]),std::extent<decltype(str1)>::value);
-    const unsigned char str2[] = {0x82, 0x03, 0x00, 0x08, 0x00, 0x01,};
-    QByteArray query82(reinterpret_cast<const char*>(&str2[0]),std::extent<decltype(str2)>::value);
+    //每次轮流查询A按钮和B按钮[原来是一起查询]
+    static bool isQueryA = true;
+    isQueryA = !isQueryA;
 
-    qint16 crc81 = checksum(query81);
-    qint16 crc82 = checksum(query82);
+    QByteArray query;
+    if(isQueryA){
+        //A的地址是0x07
+        const unsigned char str[] = {0x07, 0x03, 0x00, 0x08, 0x00, 0x01,};
+        query = QByteArray(reinterpret_cast<const char*>(&str[0]),std::extent<decltype(str)>::value);
+    }else{
+        //B的地址是0x08
+        const unsigned char str[] = {0x08, 0x03, 0x00, 0x08, 0x00, 0x01,};
+        query = QByteArray(reinterpret_cast<const char*>(&str[0]),std::extent<decltype(str)>::value);
+    }
 
-    query81 += (char )(crc81>>8 & 0xff);
-    query81 += (char )(crc81 & 0xff);
+    qint16 crc = checksum(query);
 
-    query82 += (char )(crc82>>8 & 0xff);
-    query82 += (char )(crc82 & 0xff);
+    query += (char )(crc>>8 & 0xff);
+    query += (char )(crc & 0xff);
 
     if(serial->isOpen() && serial->isWritable())
     {
-        serial->write(query81);
-        serial->write(query82);
+        serial->write(query);
+        serial->write(query);
     }
 }

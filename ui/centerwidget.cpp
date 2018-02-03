@@ -37,22 +37,19 @@ void CenterWidget::init()
     //对货物的摆放方式进行设置
     initGoodPosition();
 
-    QPushButton *takeABtn = new QPushButton(QStringLiteral("取走一个A"));
-    QPushButton *takeBBtn = new QPushButton(QStringLiteral("取走一个B"));
-    QPushButton *clearBtn = new QPushButton(QStringLiteral("清空所有"));
+    takeABtn = new QyhClickLabel(QStringLiteral("A空闲"));
+    takeBBtn = new QyhClickLabel(QStringLiteral("B空闲"));
 
-    connect(takeABtn,SIGNAL(clicked(bool)),this,SLOT(onBtnA()));
-    connect(takeBBtn,SIGNAL(clicked(bool)),this,SLOT(onBtnB()));
-    connect(clearBtn,SIGNAL(clicked(bool)),this,SLOT(clear()));
-
+    connect(takeABtn,SIGNAL(sigClick()),this,SLOT(onBtnA()));
+    connect(takeBBtn,SIGNAL(sigClick()),this,SLOT(onBtnB()));
 
     QHBoxLayout *testTwoBtnHlayout = new QHBoxLayout;
     testTwoBtnHlayout->addStretch(1);
     testTwoBtnHlayout->addWidget(takeABtn);
     testTwoBtnHlayout->addSpacing(100);
     testTwoBtnHlayout->addWidget(takeBBtn);
-    testTwoBtnHlayout->addSpacing(100);
-    testTwoBtnHlayout->addWidget(clearBtn);
+    //    testTwoBtnHlayout->addSpacing(100);
+    //    testTwoBtnHlayout->addWidget(clearBtn);
     testTwoBtnHlayout->addStretch(1);
 
     //显示累计值
@@ -154,14 +151,42 @@ void CenterWidget::takeGoodA()
 {
     if(nextTakeRowA==-1||nextTakeColumnA==-1)
     {
-        QMessageBox::critical(this,QStringLiteral("错误"),QStringLiteral("当前位置无货物"),QMessageBox::Ok);
+        QMessageBox mbox(QMessageBox::NoIcon,QStringLiteral("错误"),QStringLiteral("当前位置无货物"),QMessageBox::Yes, this);
+        mbox.setStyleSheet(
+                    "QPushButton {"
+                    "font:30px;"
+                    "padding-left:100px;"
+                    "padding-right:100px;"
+                    "padding-top:40px;"
+                    "padding-bottom:40px;"
+                    "}"
+                    "QLabel { font:30px;}"
+                    );
+        mbox.setButtonText (QMessageBox::Yes,QStringLiteral("确 定"));
+        mbox.setButtonText (QMessageBox::No,QStringLiteral("取 消"));
+        mbox.exec();
+
         return ;
     }
 
     //判断当前位置是否有货
     if(widgetGoods.at(nextTakeRowA*column+nextTakeColumnA)->hasGood()<=0)
     {
-        QMessageBox::critical(this,QStringLiteral("错误"),QStringLiteral("当前位置无货物"),QMessageBox::Ok);
+        QMessageBox mbox(QMessageBox::NoIcon,QStringLiteral("错误"),QStringLiteral("当前位置无货物"),QMessageBox::Yes, this);
+        mbox.setStyleSheet(
+                    "QPushButton {"
+                    "font:30px;"
+                    "padding-left:100px;"
+                    "padding-right:100px;"
+                    "padding-top:40px;"
+                    "padding-bottom:40px;"
+                    "}"
+                    "QLabel { font:30px;}"
+                    );
+        mbox.setButtonText (QMessageBox::Yes,QStringLiteral("确 定"));
+        mbox.setButtonText (QMessageBox::No,QStringLiteral("取 消"));
+        mbox.exec();
+
         return ;
     }
 
@@ -177,9 +202,41 @@ void CenterWidget::takeGoodA()
 //取走一个B货物
 void CenterWidget::takeGoodB()
 {
+    if(nextTakeRowB==-1||nextTakeColumnB==-1)
+    {
+        QMessageBox mbox(QMessageBox::NoIcon,QStringLiteral("错误"),QStringLiteral("当前位置无货物"),QMessageBox::Yes, this);
+        mbox.setStyleSheet(
+                    "QPushButton {"
+                    "font:30px;"
+                    "padding-left:100px;"
+                    "padding-right:100px;"
+                    "padding-top:40px;"
+                    "padding-bottom:40px;"
+                    "}"
+                    "QLabel { font:30px;}"
+                    );
+        mbox.setButtonText (QMessageBox::Yes,QStringLiteral("确 定"));
+        mbox.setButtonText (QMessageBox::No,QStringLiteral("取 消"));
+        mbox.exec();
+        return ;
+    }
+
     if(widgetGoods.at(nextTakeRowB*column+nextTakeColumnB)->hasGood()<=0)
     {
-        QMessageBox::critical(this,QStringLiteral("错误"),QStringLiteral("当前位置无货物"),QMessageBox::Ok);
+        QMessageBox mbox(QMessageBox::NoIcon,QStringLiteral("错误"),QStringLiteral("当前位置无货物"),QMessageBox::Yes, this);
+        mbox.setStyleSheet(
+                    "QPushButton {"
+                    "font:30px;"
+                    "padding-left:100px;"
+                    "padding-right:100px;"
+                    "padding-top:40px;"
+                    "padding-bottom:40px;"
+                    "}"
+                    "QLabel { font:30px;}"
+                    );
+        mbox.setButtonText (QMessageBox::Yes,QStringLiteral("确 定"));
+        mbox.setButtonText (QMessageBox::No,QStringLiteral("取 消"));
+        mbox.exec();
         return ;
     }
 
@@ -208,27 +265,12 @@ void CenterWidget::save()
 
 void CenterWidget::onBtnA()
 {
-    controlCenter.onButtn(0x81);
+    controlCenter.onButtn(RADOI_FREQUENCY_ADDRESS_A);
 }
 
 void CenterWidget::onBtnB()
 {
-    controlCenter.onButtn(0x82);
-}
-
-void CenterWidget::clear()
-{
-    QMessageBox::StandardButton rb = QMessageBox::question(this, QStringLiteral("确认清空"), QStringLiteral("确认清空所有的货物?"), QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
-    if(rb == QMessageBox::Yes)
-    {
-        foreach (auto good, widgetGoods) {
-            good->setHasGood(0);
-        }
-
-        save();
-
-        updateNext();
-    }
+    controlCenter.onButtn(RADOI_FREQUENCY_ADDRESS_B);
 }
 
 void CenterWidget::updateNext()
@@ -404,7 +446,20 @@ void CenterWidget::addGood(int add_row, int add_column)
         //A
         if(widgetGoods.at(add_row*column+add_column)->hasGood()>0)
         {
-            QMessageBox::critical(NULL,QStringLiteral("错误"),QStringLiteral("该处已经存在货物"),QMessageBox::Ok);
+            QMessageBox mbox(QMessageBox::NoIcon,QStringLiteral("错误"),QStringLiteral("该处已经存在货物"),QMessageBox::Yes, this);
+            mbox.setStyleSheet(
+                        "QPushButton {"
+                        "font:30px;"
+                        "padding-left:100px;"
+                        "padding-right:100px;"
+                        "padding-top:40px;"
+                        "padding-bottom:40px;"
+                        "}"
+                        "QLabel { font:30px;}"
+                        );
+            mbox.setButtonText (QMessageBox::Yes,QStringLiteral("确 定"));
+            mbox.setButtonText (QMessageBox::No,QStringLiteral("取 消"));
+            mbox.exec();
         }else{
             widgetGoods.at(add_row*column+add_column)->setHasGood(++maxA);
             save();
@@ -414,11 +469,73 @@ void CenterWidget::addGood(int add_row, int add_column)
         //B
         if(widgetGoods.at(add_row*column+add_column)->hasGood()>0)
         {
-            QMessageBox::critical(NULL,QStringLiteral("错误"),QStringLiteral("该处已经存在货物"),QMessageBox::Ok);
+            QMessageBox mbox(QMessageBox::NoIcon,QStringLiteral("错误"),QStringLiteral("该处已经存在货物"),QMessageBox::Yes, this);
+            mbox.setStyleSheet(
+                        "QPushButton {"
+                        "font:30px;"
+                        "padding-left:100px;"
+                        "padding-right:100px;"
+                        "padding-top:40px;"
+                        "padding-bottom:40px;"
+                        "}"
+                        "QLabel { font:30px;}"
+                        );
+            mbox.setButtonText (QMessageBox::Yes,QStringLiteral("确 定"));
+            mbox.setButtonText (QMessageBox::No,QStringLiteral("取 消"));
+            mbox.exec();
         }else{
             widgetGoods.at(add_row*column+add_column)->setHasGood(++maxB);
             save();
             updateNext();
         }
     }
+}
+
+void CenterWidget::removeGood(int remove_row,int remove_column)
+{
+    if(remove_column<0||remove_column>=column ||remove_row<0||remove_row>=row){
+        QMessageBox mbox(QMessageBox::NoIcon,QStringLiteral("错误"),QStringLiteral("该处无货物"),QMessageBox::Yes, this);
+        mbox.setStyleSheet(
+                    "QPushButton {"
+                    "font:30px;"
+                    "padding-left:100px;"
+                    "padding-right:100px;"
+                    "padding-top:40px;"
+                    "padding-bottom:40px;"
+                    "}"
+                    "QLabel { font:30px;}"
+                    );
+        mbox.setButtonText (QMessageBox::Yes,QStringLiteral("确 定"));
+        mbox.setButtonText (QMessageBox::No,QStringLiteral("取 消"));
+        mbox.exec();
+    }else{
+        widgetGoods.at(remove_row*column+remove_column)->setHasGood(0);
+        save();
+        updateNext();
+    }
+}
+
+
+void CenterWidget::onStartTakeA()
+{
+    takeABtn->setText(QStringLiteral("正在取货A中..."));
+    takeABtn->setFlicker(true);
+}
+
+void CenterWidget::onStartTakeB()
+{
+    takeBBtn->setText(QStringLiteral("正在取货B中..."));
+    takeBBtn->setFlicker(true);
+}
+
+void CenterWidget::onFinishTakeA()
+{
+    takeABtn->setText(QStringLiteral("A空闲"));
+    takeABtn->setFlicker(false);
+}
+
+void CenterWidget::onFinishTakeB()
+{
+    takeBBtn->setText(QStringLiteral("B空闲"));
+    takeBBtn->setFlicker(false);
 }

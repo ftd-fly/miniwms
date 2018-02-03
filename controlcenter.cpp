@@ -2,8 +2,8 @@
 #include "global.h"
 
 ControlCenter::ControlCenter(QObject *parent) : QObject(parent),
-    task81Finish(true),
-    task82Finish(true)
+    taskAFinish(true),
+    taskBFinish(true)
 {
 
 }
@@ -48,10 +48,10 @@ bool ControlCenter::init()
 
 void ControlCenter::onButtn(int address)
 {
-    if(address == 0x81 && task81Finish)
+    if(address == RADOI_FREQUENCY_ADDRESS_A && taskAFinish)
     {
         //产生一个A任务
-        task81Finish = false;
+        taskAFinish = false;
         Task task;
         task.line = Task::LineA;
         task.task_createTime = QDateTime::currentDateTime();
@@ -67,13 +67,27 @@ void ControlCenter::onButtn(int address)
             todoTasks.push_back(task);
         }else{
             //存库失败！
-            QMessageBox::critical(NULL,QStringLiteral("错误"),QStringLiteral("对新任务存库失败"),QMessageBox::Ok);
-            task81Finish = true;
+            QMessageBox mbox(QMessageBox::NoIcon,QStringLiteral("错误"),QStringLiteral("对新任务存库失败"),QMessageBox::Yes);
+            mbox.setStyleSheet(
+                        "QPushButton {"
+                        "font:30px;"
+                        "padding-left:100px;"
+                        "padding-right:100px;"
+                        "padding-top:40px;"
+                        "padding-bottom:40px;"
+                        "}"
+                        "QLabel { font:30px;}"
+                        );
+            mbox.setButtonText (QMessageBox::Yes,QStringLiteral("确 定"));
+            mbox.setButtonText (QMessageBox::No,QStringLiteral("取 消"));
+            mbox.exec();
+
+            taskAFinish = true;
         }
-    }else if(address == 0x82 && task82Finish)
+    }else if(address == RADOI_FREQUENCY_ADDRESS_B && taskBFinish)
     {
         //产生一个B任务
-        task82Finish = false;
+        taskBFinish = false;
         Task task;
         task.line = Task::LineB;
         task.task_createTime = QDateTime::currentDateTime();
@@ -89,8 +103,21 @@ void ControlCenter::onButtn(int address)
             todoTasks.push_back(task);
         }else{
             //存库失败！
-            QMessageBox::critical(NULL,QStringLiteral("错误"),QStringLiteral("对新任务存库失败"),QMessageBox::Ok);
-            task82Finish = false;
+            QMessageBox mbox(QMessageBox::NoIcon,QStringLiteral("错误"),QStringLiteral("对新任务存库失败"),QMessageBox::Yes);
+            mbox.setStyleSheet(
+                        "QPushButton {"
+                        "font:30px;"
+                        "padding-left:100px;"
+                        "padding-right:100px;"
+                        "padding-top:40px;"
+                        "padding-bottom:40px;"
+                        "}"
+                        "QLabel { font:30px;}"
+                        );
+            mbox.setButtonText (QMessageBox::Yes,QStringLiteral("确 定"));
+            mbox.setButtonText (QMessageBox::No,QStringLiteral("取 消"));
+            mbox.exec();
+            taskBFinish = false;
         }
     }
 }
@@ -138,23 +165,53 @@ void ControlCenter::onTaskCheck()
 
         if(!g_sql->exeSql(updateSql,params)){
             //更新数据库失败
-            QMessageBox::critical(NULL,QStringLiteral("错误"),QStringLiteral("对任务数据库更新失败"),QMessageBox::Ok);
+            QMessageBox mbox(QMessageBox::NoIcon,QStringLiteral("错误"),QStringLiteral("对新任务存库失败"),QMessageBox::Yes);
+            mbox.setStyleSheet(
+                        "QPushButton {"
+                        "font:30px;"
+                        "padding-left:100px;"
+                        "padding-right:100px;"
+                        "padding-top:40px;"
+                        "padding-bottom:40px;"
+                        "}"
+                        "QLabel { font:30px;}"
+                        );
+            mbox.setButtonText (QMessageBox::Yes,QStringLiteral("确 定"));
+            mbox.setButtonText (QMessageBox::No,QStringLiteral("取 消"));
+            mbox.exec();
         }
 
         doingTasks.append(t);
         todoTasks.removeAt(0);
 
         //开始执行，便将货物从UI界面中移除。
-        if(t.line == Task::LineA)
+        if(t.line == Task::LineA){
             centerWidget->takeGoodA();
-        else
+            rf.lightOff(RADOI_FREQUENCY_ADDRESS_A);
+        }
+        else{
             centerWidget->takeGoodB();
+            rf.lightOff(RADOI_FREQUENCY_ADDRESS_B);
+        }
     }
 }
 
 void ControlCenter::onError()
 {
-    QMessageBox::critical(NULL,QStringLiteral("错误"),QStringLiteral("AGV发生错误，请重启"),QMessageBox::Ok);
+    QMessageBox mbox(QMessageBox::NoIcon,QStringLiteral("错误"),QStringLiteral("AGV发生错误，请重启"),QMessageBox::Yes);
+    mbox.setStyleSheet(
+                "QPushButton {"
+                "font:30px;"
+                "padding-left:100px;"
+                "padding-right:100px;"
+                "padding-top:40px;"
+                "padding-bottom:40px;"
+                "}"
+                "QLabel { font:30px;}"
+                );
+    mbox.setButtonText (QMessageBox::Yes,QStringLiteral("确 定"));
+    mbox.setButtonText (QMessageBox::No,QStringLiteral("取 消"));
+    mbox.exec();
 }
 
 void ControlCenter::onTaskFinish(int taskId)
@@ -166,9 +223,9 @@ void ControlCenter::onTaskFinish(int taskId)
         {
             if(t.line == Task::LineA)
             {
-                task81Finish = true;
+                taskAFinish = true;
             }else{
-                task82Finish = true;
+                taskBFinish = true;
             }
             t.task_finishTime = QDateTime::currentDateTime();
 
@@ -180,8 +237,20 @@ void ControlCenter::onTaskFinish(int taskId)
 
             if(!g_sql->exeSql(updateSql,params))
             {
-                //更新数据库失败
-                QMessageBox::critical(NULL,QStringLiteral("错误"),QStringLiteral("对任务数据库更新失败"),QMessageBox::Ok);
+                QMessageBox mbox(QMessageBox::NoIcon,QStringLiteral("错误"),QStringLiteral("对任务数据库更新失败"),QMessageBox::Yes);
+                mbox.setStyleSheet(
+                            "QPushButton {"
+                            "font:30px;"
+                            "padding-left:100px;"
+                            "padding-right:100px;"
+                            "padding-top:40px;"
+                            "padding-bottom:40px;"
+                            "}"
+                            "QLabel { font:30px;}"
+                            );
+                mbox.setButtonText (QMessageBox::Yes,QStringLiteral("确 定"));
+                mbox.setButtonText (QMessageBox::No,QStringLiteral("取 消"));
+                mbox.exec();
             }
 
             doingTasks.removeAt(i);

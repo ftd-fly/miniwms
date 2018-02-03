@@ -21,8 +21,8 @@ public slots:
     void onError();
 private:
     RadioFrequency rf;
-    bool task81Finish;
-    bool task82Finish;
+    bool taskAFinish;
+    bool taskBFinish;
     QList<Task> todoTasks;
     QList<Task> doingTasks;
     QTimer tasktimer;

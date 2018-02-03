@@ -3,6 +3,7 @@
 
 #include <QWidget>
 #include <QTimer>
+#include "qyhclicklabel.h"
 class QPushButton;
 class QLabel;
 class QGroupBox;
@@ -20,6 +21,8 @@ public:
 
     void addGood(int add_row,int add_column);
 
+    void removeGood(int remove_row,int remove_column);
+
 signals:
 
 public slots:
@@ -33,8 +36,6 @@ public slots:
 
     void onBtnB();
 
-    void clear();
-
 protected:
     //将按钮、货物，摆放在合适的位置
     virtual void initGoodPosition() = 0;
@@ -44,6 +45,14 @@ protected:
 private slots:
     //查询完成数量
     void queryNumber();
+
+    void onStartTakeA();
+
+    void onStartTakeB();
+
+    void onFinishTakeA();
+
+    void onFinishTakeB();
 protected:
 
     QGroupBox * centergroup;
@@ -73,6 +82,9 @@ private:
     QLCDNumber *tAll;
     QLCDNumber *tA;
     QLCDNumber *tB;
+
+    QyhClickLabel *takeABtn;
+    QyhClickLabel *takeBBtn;
 
     QTimer updateNumberTimer;
 };

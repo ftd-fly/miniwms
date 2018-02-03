@@ -22,9 +22,14 @@ signals:
 public slots:
     void onTakeFlicker();
     void onPutFlicker();
+    void onClicked();
 protected:
     void paintEvent(QPaintEvent *event);
     bool event(QEvent* e);
+
+
+    void mousePressEvent(QMouseEvent* event);      //单击
+    void mouseDoubleClickEvent(QMouseEvent * event);
 private:
     int code;//位置编号
     int iHasGood;//是否有货
@@ -35,6 +40,8 @@ private:
     bool takeFlickerOn;
     QTimer putFlickerTimer;
     bool putFlickerOn;
+
+    QTimer clicktimer;   //定时器
 };
 
 #endif // WIDGETGOOD_H

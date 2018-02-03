@@ -21,6 +21,8 @@ WidgetGood::WidgetGood(int _code, int _type, int _iHasGood, bool _needRotate, QW
 
     putFlickerTimer.setInterval(800);
     connect(&putFlickerTimer,&QTimer::timeout,this,&WidgetGood::onPutFlicker);
+
+    connect(&clicktimer, &QTimer::timeout,this,&WidgetGood::onClicked);
 }
 
 void WidgetGood::setTakeFlicker(bool f)
@@ -122,26 +124,6 @@ bool WidgetGood::event(QEvent* event)
     }else if (event->type()==QEvent::Leave){
         mouseover = false;
         update();
-    }else if(event->type() == QEvent::MouseButtonPress && putFlickerTimer.isActive()){
-        QMouseEvent *e = static_cast<QMouseEvent*> (event);
-        if(e->button() == Qt::LeftButton && iHasGood<=0)
-        {
-            QString text;
-            if(type==1)text= QString("A");
-            if(type==2)text= QString("B");
-
-            text+= QString("%1_%2").arg(1+(code-1)/column).arg(1+(code-1)%column);
-            //左键单机，进行添加
-            QMessageBox::StandardButton rb = QMessageBox::warning(this,QStringLiteral("确定摆放"),QStringLiteral("确认在")+text+QStringLiteral("摆放货物？"),QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
-            if(rb == QMessageBox::Yes)
-            {
-                if(type==1){
-                    centerWidget->addGood((code-1)/column,(code-1)%column);
-                }else{
-                    centerWidget->addGood(rowA+(code-1)/column,(code-1)%column);
-                }
-            }
-        }
     }
     return QWidget::event(event);
 }
@@ -155,4 +137,97 @@ void WidgetGood::onPutFlicker()
 {
     putFlickerOn = !putFlickerOn;
     update();
+}
+
+void WidgetGood::onClicked()
+{
+    clicktimer.stop();
+    //单击事件
+    if(iHasGood<=0 && putFlickerTimer.isActive())
+    {
+        QString text;
+        if(type==1)text= QString("A");
+        if(type==2)text= QString("B");
+
+        text+= QString("%1_%2").arg(1+(code-1)/column).arg(1+(code-1)%column);
+        //左键单机，进行添加
+        QMessageBox mbox(QMessageBox::NoIcon,QStringLiteral("确定摆放"),QStringLiteral("确认在")+text+QStringLiteral("摆放货物？"),QMessageBox::Yes | QMessageBox::No, this);
+        mbox.setStyleSheet(
+                    "QPushButton {"
+                    "font:30px;"
+                    "padding-left:100px;"
+                    "padding-right:100px;"
+                    "padding-top:40px;"
+                    "padding-bottom:40px;"
+                    "}"
+                    "QLabel { font:30px;}"
+                    );
+        mbox.setButtonText (QMessageBox::Yes,QStringLiteral("确 定"));
+        mbox.setButtonText (QMessageBox::No,QStringLiteral("取 消"));
+
+        int r = mbox.exec();
+        if(r==QMessageBox::Yes)
+        {
+            if(type==1){
+                centerWidget->addGood((code-1)/column,(code-1)%column);
+            }else{
+                centerWidget->addGood(rowA+(code-1)/column,(code-1)%column);
+            }
+        }
+    }else if(iHasGood > 0){
+        //点击删除
+        QString text;
+        if(type==1)text= QString("A");
+        if(type==2)text= QString("B");
+
+        text+= QString("%1_%2").arg(1+(code-1)/column).arg(1+(code-1)%column);
+
+        QMessageBox mbox(QMessageBox::NoIcon,QStringLiteral("确定摆放"),QStringLiteral("确认删除")+text+QStringLiteral("的货物？"),QMessageBox::Yes | QMessageBox::No, this);
+        mbox.setStyleSheet(
+                    "QPushButton {"
+                    "font:30px;"
+                    "padding-left:100px;"
+                    "padding-right:100px;"
+                    "padding-top:40px;"
+                    "padding-bottom:40px;"
+                    "}"
+                    "QLabel { font:30px;}"
+                    );
+        mbox.setButtonText (QMessageBox::Yes,QStringLiteral("确 定"));
+        mbox.setButtonText (QMessageBox::No,QStringLiteral("取 消"));
+
+        int r = mbox.exec();
+        if(r==QMessageBox::Yes)
+        {
+            if(type==1){
+                centerWidget->removeGood((code-1)/column,(code-1)%column);
+            }else{
+                centerWidget->removeGood(rowA+(code-1)/column,(code-1)%column);
+            }
+        }
+    }
+
+}
+
+void WidgetGood::mousePressEvent(QMouseEvent* event)
+{
+    if(event->button() == Qt::LeftButton){
+        //800ms之内没有变成双击事件，就认为是单击事件
+        clicktimer.start(800);
+    }
+}
+
+void WidgetGood::mouseDoubleClickEvent(QMouseEvent * event)
+{
+    clicktimer.stop();
+    //左键双击,直接添加
+    if(event->button() == Qt::LeftButton && iHasGood<=0 && putFlickerTimer.isActive())
+    {
+
+        if(type==1){
+            centerWidget->addGood((code-1)/column,(code-1)%column);
+        }else{
+            centerWidget->addGood(rowA+(code-1)/column,(code-1)%column);
+        }
+    }
 }

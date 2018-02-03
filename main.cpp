@@ -24,8 +24,20 @@ int main(int argc, char *argv[])
     //初始化sql
     g_sql = new Sql;
     if(!g_sql->createConnection()){
-        QMessageBox::critical(NULL,QStringLiteral("错误"),QStringLiteral("初始化数据库连接失败"),QMessageBox::Ok);
-        //return -1;
+        QMessageBox mbox(QMessageBox::NoIcon,QStringLiteral("错误"),QStringLiteral("初始化数据库连接失败"),QMessageBox::Yes);
+        mbox.setStyleSheet(
+                    "QPushButton {"
+                    "font:30px;"
+                    "padding-left:100px;"
+                    "padding-right:100px;"
+                    "padding-top:40px;"
+                    "padding-bottom:40px;"
+                    "}"
+                    "QLabel { font:30px;}"
+                    );
+        mbox.setButtonText (QMessageBox::Yes,QStringLiteral("确 定"));
+        mbox.setButtonText (QMessageBox::No,QStringLiteral("取 消"));
+        mbox.exec();
     }
 
     //初始化控制中心
