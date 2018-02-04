@@ -13,9 +13,7 @@ bool ControlCenter::init()
     //初始化串口
     connect(&rf,SIGNAL(buttonClick(int)),this,SLOT(onButtn(int)));
     if(!rf.init())
-    {
         return false;
-    }
 
     //初始化车辆
     int quantity = configure.getValue("agv/quantity").toInt();
@@ -187,11 +185,9 @@ void ControlCenter::onTaskCheck()
         //开始执行，便将货物从UI界面中移除。
         if(t.line == Task::LineA){
             centerWidget->takeGoodA();
-            rf.lightOff(RADOI_FREQUENCY_ADDRESS_A);
         }
         else{
             centerWidget->takeGoodB();
-            rf.lightOff(RADOI_FREQUENCY_ADDRESS_B);
         }
     }
 }
@@ -224,8 +220,10 @@ void ControlCenter::onTaskFinish(int taskId)
             if(t.line == Task::LineA)
             {
                 taskAFinish = true;
+                rf.lightOff(RADOI_FREQUENCY_ADDRESS_A);
             }else{
                 taskBFinish = true;
+                rf.lightOff(RADOI_FREQUENCY_ADDRESS_B);
             }
             t.task_finishTime = QDateTime::currentDateTime();
 

@@ -36,6 +36,7 @@ public slots:
 
     void onBtnB();
 
+    void clear();
 protected:
     //将按钮、货物，摆放在合适的位置
     virtual void initGoodPosition() = 0;

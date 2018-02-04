@@ -20,7 +20,6 @@ RadioFrequency::~RadioFrequency()
 bool RadioFrequency::init()
 {
     //从配置文件中读取配置
-
     //COM口
     serial->setPortName(configure.getValue("RadioFrequency/COM").toString());
 
@@ -86,6 +85,8 @@ bool RadioFrequency::init()
 void RadioFrequency::onRead()
 {
     static QByteArray buffer;
+    static int APushTime = 0;//计数 A按下的时间
+    static int BPushTime = 0;//计数 A按下的时间
     buffer += serial->readAll();
     while(true)
     {
@@ -107,12 +108,46 @@ void RadioFrequency::onRead()
             //长度为7
             QByteArray statusMsg = buffer.mid(index,7);
             int status = ((statusMsg.at(3))<<8 &0xff00)|((statusMsg.at(4)&0xff));
+            if(statusMsg.at(0) == RADOI_FREQUENCY_ADDRESS_A ){
+                if(status!=0){
+                    ++APushTime;
+
+                    if(APushTime>=3)
+                    {
+                        //按钮被按下
+                        //亮灯
+                        lightOn(statusMsg.at(0));
+                        //发出信号
+                        emit buttonClick(statusMsg.at(0));
+                        APushTime = 0;
+                    }
+                }else{
+                    APushTime = 0;
+                }
+            }else if(statusMsg.at(0) == RADOI_FREQUENCY_ADDRESS_B ){
+                if(status!=0){
+                    ++BPushTime;
+                    if(BPushTime>=3){
+                        //按钮被按下
+                        //亮灯
+                        lightOn(statusMsg.at(0));
+                        //发出信号
+                        emit buttonClick(statusMsg.at(0));
+                        BPushTime = 0;
+                    }
+                }else{
+                    BPushTime = 0;
+                }
+            }
+
             if(status!=0){
                 //按钮被按下
                 //亮灯
                 lightOn(statusMsg.at(0));
                 //发出信号
                 emit buttonClick(statusMsg.at(0));
+            }else{
+                APushTime = 0;
             }
 
             buffer = buffer.right(buffer.length()-index-7);
@@ -177,7 +212,6 @@ void RadioFrequency::queryStatus()
 
     if(serial->isOpen() && serial->isWritable())
     {
-        serial->write(query);
         serial->write(query);
     }
 }

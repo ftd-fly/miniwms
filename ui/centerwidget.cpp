@@ -39,17 +39,19 @@ void CenterWidget::init()
 
     takeABtn = new QyhClickLabel(QStringLiteral("A空闲"));
     takeBBtn = new QyhClickLabel(QStringLiteral("B空闲"));
+    QPushButton *clearBtn = new QPushButton(QStringLiteral("清空所有"));
 
-    connect(takeABtn,SIGNAL(sigClick()),this,SLOT(onBtnA()));
-    connect(takeBBtn,SIGNAL(sigClick()),this,SLOT(onBtnB()));
+//    connect(takeABtn,SIGNAL(sigClick()),this,SLOT(onBtnA()));
+//    connect(takeBBtn,SIGNAL(sigClick()),this,SLOT(onBtnB()));
+    connect(clearBtn,SIGNAL(clicked(bool)),this,SLOT(clear()));
 
     QHBoxLayout *testTwoBtnHlayout = new QHBoxLayout;
     testTwoBtnHlayout->addStretch(1);
     testTwoBtnHlayout->addWidget(takeABtn);
     testTwoBtnHlayout->addSpacing(100);
     testTwoBtnHlayout->addWidget(takeBBtn);
-    //    testTwoBtnHlayout->addSpacing(100);
-    //    testTwoBtnHlayout->addWidget(clearBtn);
+    testTwoBtnHlayout->addSpacing(100);
+    testTwoBtnHlayout->addWidget(clearBtn);
     testTwoBtnHlayout->addStretch(1);
 
     //显示累计值
@@ -98,10 +100,9 @@ void CenterWidget::init()
 
     //水平居中
     QHBoxLayout *hlayout = new QHBoxLayout;
-    hlayout->addStretch(1);
-    hlayout->addWidget(centergroup);
+    hlayout->addWidget(centergroup,2);
+    hlayout->addSpacing(10);
     hlayout->addItem(countlayout);
-    hlayout->addStretch(1);
 
     //竖直居中
     QVBoxLayout *vlayout = new QVBoxLayout;
@@ -273,6 +274,37 @@ void CenterWidget::onBtnB()
     controlCenter.onButtn(RADOI_FREQUENCY_ADDRESS_B);
 }
 
+void CenterWidget::clear()
+{
+    QMessageBox::StandardButton rb = QMessageBox::question(this, QStringLiteral("确认清空"), QStringLiteral("确认清空所有的货物?"), QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
+    QMessageBox mbox(QMessageBox::NoIcon,QStringLiteral("确认清空"),QStringLiteral("确认清空所有的货物?"),QMessageBox::Yes | QMessageBox::No, this);
+    mbox.setStyleSheet(
+                "QPushButton {"
+                "font:30px;"
+                "padding-left:100px;"
+                "padding-right:100px;"
+                "padding-top:40px;"
+                "padding-bottom:40px;"
+                "}"
+                "QLabel { font:30px;}"
+                );
+    mbox.setButtonText (QMessageBox::Yes,QStringLiteral("确 定"));
+    mbox.setButtonText (QMessageBox::No,QStringLiteral("取 消"));
+
+    int r = mbox.exec();
+    if(r==QMessageBox::Yes)
+    {
+        foreach (auto good, widgetGoods) {
+            good->setHasGood(0);
+        }
+
+        save();
+
+        updateNext();
+    }
+}
+
+
 void CenterWidget::updateNext()
 {
     minA = 0;
@@ -421,7 +453,7 @@ void CenterWidget::updateNext()
 
 int CenterWidget::getNextAStation()
 {
-    if(nextTakeRowA*column+nextTakeColumnA > widgetGoods.length())return -1;
+    if(nextTakeRowA*column+nextTakeColumnA > widgetGoods.length()||nextTakeRowA*column+nextTakeColumnA<0)return -1;
     if(widgetGoods.at(nextTakeRowA*column+nextTakeColumnA)->hasGood()>0)
     {
         return  nextTakeRowA*column+nextTakeColumnA;
@@ -431,7 +463,7 @@ int CenterWidget::getNextAStation()
 
 int CenterWidget::getNextBStation()
 {
-    if(nextTakeRowB*column+nextTakeColumnB > widgetGoods.length())return -1;
+    if(nextTakeRowB*column+nextTakeColumnB > widgetGoods.length()||nextTakeRowB*column+nextTakeColumnB<0)return -1;
     if(widgetGoods.at(nextTakeRowB*column+nextTakeColumnB)->hasGood()>0)
     {
         return  nextTakeRowB*column+nextTakeColumnB;

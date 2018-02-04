@@ -9,10 +9,10 @@ int main(int argc, char *argv[])
     //设置全局字体
     a.setFont(QFont("Microsoft Yahei", 14));
 
-    //设置启动图标
-    QPixmap pixmap(":/images/logo.png");
-    QSplashScreen splash(pixmap);
-    splash.show();
+//    //设置启动图标
+//    QPixmap pixmap(":/images/logo.png");
+//    QSplashScreen splash(pixmap);
+//    splash.show();
 
     //设置当前目录为根目录
     g_strExeRoot = QCoreApplication::applicationDirPath();
@@ -40,16 +40,16 @@ int main(int argc, char *argv[])
         mbox.exec();
     }
 
+    //显示主界面
+    MainWindow w;
+    w.show();
+
     //初始化控制中心
     if(!controlCenter.init())
     {
         qDebug() <<"controlCenter init fail";
         //return -1;
     }
-    //显示主界面
-    MainWindow w;
-    splash.finish(&w);
-    w.show();
 
     return a.exec();
 }
