@@ -25,6 +25,7 @@ public:
     bool isconnect();
     bool isinit();
     bool sendTask(int _taskId,int line,int station);
+    bool cancelTask(int line, int station);
     bool isIdle();
     int getId(){return id;}
 signals:

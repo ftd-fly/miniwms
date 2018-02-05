@@ -107,16 +107,18 @@ void RadioFrequency::onRead()
         {
             //长度为7
             QByteArray statusMsg = buffer.mid(index,7);
-            int status = ((statusMsg.at(3))<<8 &0xff00)|((statusMsg.at(4)&0xff));
+            int status = statusMsg.at(3);
             if(statusMsg.at(0) == RADOI_FREQUENCY_ADDRESS_A ){
-                if(status!=0){
-                    ++APushTime;
+                if(status==0x03){
 
+                    ++APushTime;
                     if(APushTime>=3)
                     {
+                        qDebug()<<"A PUSH!";
                         //按钮被按下
                         //亮灯
                         lightOn(statusMsg.at(0));
+                        qDebug()<<"A LIGHT ON!";
                         //发出信号
                         emit buttonClick(statusMsg.at(0));
                         APushTime = 0;
@@ -125,12 +127,14 @@ void RadioFrequency::onRead()
                     APushTime = 0;
                 }
             }else if(statusMsg.at(0) == RADOI_FREQUENCY_ADDRESS_B ){
-                if(status!=0){
+                if(status==0x03){
                     ++BPushTime;
                     if(BPushTime>=3){
+                        qDebug("B PUSH!");
                         //按钮被按下
                         //亮灯
                         lightOn(statusMsg.at(0));
+                        qDebug()<<"B LIGHT ON!";
                         //发出信号
                         emit buttonClick(statusMsg.at(0));
                         BPushTime = 0;
@@ -138,16 +142,6 @@ void RadioFrequency::onRead()
                 }else{
                     BPushTime = 0;
                 }
-            }
-
-            if(status!=0){
-                //按钮被按下
-                //亮灯
-                lightOn(statusMsg.at(0));
-                //发出信号
-                emit buttonClick(statusMsg.at(0));
-            }else{
-                APushTime = 0;
             }
 
             buffer = buffer.right(buffer.length()-index-7);
@@ -163,7 +157,7 @@ void RadioFrequency::onRead()
 
 void RadioFrequency::lightOn(int address)
 {
-    const unsigned char str[] = {(address&0xff),  0x10, 0x00, 0x02, 0x00, 0x01, 0x02,0x00,0x01,};
+    const unsigned char str[] = {(address&0xff),  0x10, 0x00, 0x02, 0x00, 0x01, 0x02,0x03,0xff,};
     QByteArray sendCmd(reinterpret_cast<const char*>(&str[0]),std::extent<decltype(str)>::value);
 
     qint16 crc = checksum(sendCmd);

@@ -40,10 +40,15 @@ void CenterWidget::init()
     takeABtn = new QyhClickLabel(QStringLiteral("A空闲"));
     takeBBtn = new QyhClickLabel(QStringLiteral("B空闲"));
     QPushButton *clearBtn = new QPushButton(QStringLiteral("清空所有"));
+    cancelABtn = new QPushButton(QStringLiteral("取消A任务"));
+    cancelBBtn = new QPushButton(QStringLiteral("取消B任务"));
 
-//    connect(takeABtn,SIGNAL(sigClick()),this,SLOT(onBtnA()));
-//    connect(takeBBtn,SIGNAL(sigClick()),this,SLOT(onBtnB()));
+    connect(cancelABtn,SIGNAL(clicked(bool)),this,SLOT(cancelA()));
+    connect(cancelBBtn,SIGNAL(clicked(bool)),this,SLOT(cancelB()));
     connect(clearBtn,SIGNAL(clicked(bool)),this,SLOT(clear()));
+
+    cancelABtn->setEnabled(false);
+    cancelBBtn->setEnabled(false);
 
     QHBoxLayout *testTwoBtnHlayout = new QHBoxLayout;
     testTwoBtnHlayout->addStretch(1);
@@ -52,6 +57,10 @@ void CenterWidget::init()
     testTwoBtnHlayout->addWidget(takeBBtn);
     testTwoBtnHlayout->addSpacing(100);
     testTwoBtnHlayout->addWidget(clearBtn);
+    testTwoBtnHlayout->addSpacing(100);
+    testTwoBtnHlayout->addWidget(cancelABtn);
+    testTwoBtnHlayout->addSpacing(100);
+    testTwoBtnHlayout->addWidget(cancelBBtn);
     testTwoBtnHlayout->addStretch(1);
 
     //显示累计值
@@ -194,6 +203,8 @@ void CenterWidget::takeGoodA()
     //取走货物，对index进行下移
     widgetGoods.at(nextTakeRowA*column+nextTakeColumnA)->setHasGood(0);
 
+    onStartTakeA();
+
     //保存配置文件中
     save();
 
@@ -244,6 +255,8 @@ void CenterWidget::takeGoodB()
     //取走货物，对index进行下移
     widgetGoods.at(nextTakeRowB*column+nextTakeColumnB)->setHasGood(0);
 
+    onStartTakeB();
+
     //保存配置文件中
     save();
 
@@ -264,19 +277,8 @@ void CenterWidget::save()
 }
 
 
-void CenterWidget::onBtnA()
-{
-    controlCenter.onButtn(RADOI_FREQUENCY_ADDRESS_A);
-}
-
-void CenterWidget::onBtnB()
-{
-    controlCenter.onButtn(RADOI_FREQUENCY_ADDRESS_B);
-}
-
 void CenterWidget::clear()
 {
-    QMessageBox::StandardButton rb = QMessageBox::question(this, QStringLiteral("确认清空"), QStringLiteral("确认清空所有的货物?"), QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
     QMessageBox mbox(QMessageBox::NoIcon,QStringLiteral("确认清空"),QStringLiteral("确认清空所有的货物?"),QMessageBox::Yes | QMessageBox::No, this);
     mbox.setStyleSheet(
                 "QPushButton {"
@@ -302,6 +304,26 @@ void CenterWidget::clear()
 
         updateNext();
     }
+}
+
+void CenterWidget::cancelA()
+{
+    controlCenter.cancelTask(RADOI_FREQUENCY_ADDRESS_A);
+}
+
+void CenterWidget::cancelB()
+{
+    controlCenter.cancelTask(RADOI_FREQUENCY_ADDRESS_B);
+}
+
+void CenterWidget::finishA()
+{
+    onFinishTakeA();
+}
+
+void CenterWidget::finishB()
+{
+    onFinishTakeB();
 }
 
 
@@ -552,22 +574,26 @@ void CenterWidget::onStartTakeA()
 {
     takeABtn->setText(QStringLiteral("正在取货A中..."));
     takeABtn->setFlicker(true);
+    cancelABtn->setEnabled(true);
 }
 
 void CenterWidget::onStartTakeB()
 {
     takeBBtn->setText(QStringLiteral("正在取货B中..."));
     takeBBtn->setFlicker(true);
+    cancelBBtn->setEnabled(true);
 }
 
 void CenterWidget::onFinishTakeA()
 {
     takeABtn->setText(QStringLiteral("A空闲"));
     takeABtn->setFlicker(false);
+    cancelABtn->setEnabled(false);
 }
 
 void CenterWidget::onFinishTakeB()
 {
     takeBBtn->setText(QStringLiteral("B空闲"));
     takeBBtn->setFlicker(false);
+    cancelBBtn->setEnabled(false);
 }

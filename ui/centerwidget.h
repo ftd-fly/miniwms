@@ -32,11 +32,14 @@ public slots:
     //取走一个B货物
     void takeGoodB();
 
-    void onBtnA();
-
-    void onBtnB();
-
     void clear();
+
+    void cancelA();
+
+    void cancelB();
+
+    void finishA();
+    void finishB();
 protected:
     //将按钮、货物，摆放在合适的位置
     virtual void initGoodPosition() = 0;
@@ -88,6 +91,9 @@ private:
     QyhClickLabel *takeBBtn;
 
     QTimer updateNumberTimer;
+
+    QPushButton *cancelABtn;
+    QPushButton *cancelBBtn;
 };
 
 #endif // CENTERWIDGET_H

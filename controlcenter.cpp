@@ -44,6 +44,46 @@ bool ControlCenter::init()
     return true;
 }
 
+void ControlCenter::cancelTask(int aOrB)
+{
+    //cancel task a
+    if(aOrB == RADOI_FREQUENCY_ADDRESS_A)
+    {
+        for(int i=0;i<doingTasks.length();++i)
+        {
+            if(doingTasks.at(i).line == Task::LineA){
+                Task t = doingTasks.at(i);
+                doingTasks.removeAt(i);
+                rf.lightOff(RADOI_FREQUENCY_ADDRESS_A);
+                foreach (auto a, agvs) {
+                    if(a->getId() == t.excuteAgv){
+                        a->cancelTask(t.line,t.station);
+                    }
+                }
+            }
+            break;
+        }
+    }
+    //cancel task B
+    else if(aOrB == RADOI_FREQUENCY_ADDRESS_B){
+        for(int i=0;i<doingTasks.length();++i)
+        {
+            if(doingTasks.at(i).line == Task::LineB)
+            {
+                Task t = doingTasks.at(i);
+                doingTasks.removeAt(i);
+                rf.lightOff(RADOI_FREQUENCY_ADDRESS_B);
+                foreach (auto a, agvs) {
+                    if(a->getId() == t.excuteAgv){
+                        a->cancelTask(t.line,t.station);
+                    }
+                }
+                break;
+            }
+        }
+    }
+}
+
 void ControlCenter::onButtn(int address)
 {
     if(address == RADOI_FREQUENCY_ADDRESS_A && taskAFinish)
@@ -81,6 +121,7 @@ void ControlCenter::onButtn(int address)
             mbox.exec();
 
             taskAFinish = true;
+            rf.lightOff(RADOI_FREQUENCY_ADDRESS_A);
         }
     }else if(address == RADOI_FREQUENCY_ADDRESS_B && taskBFinish)
     {
@@ -116,6 +157,7 @@ void ControlCenter::onButtn(int address)
             mbox.setButtonText (QMessageBox::No,QStringLiteral("取 消"));
             mbox.exec();
             taskBFinish = false;
+            rf.lightOff(RADOI_FREQUENCY_ADDRESS_B);
         }
     }
 }
@@ -221,12 +263,14 @@ void ControlCenter::onTaskFinish(int taskId)
             {
                 taskAFinish = true;
                 rf.lightOff(RADOI_FREQUENCY_ADDRESS_A);
+                centerWidget->finishA();
             }else{
                 taskBFinish = true;
                 rf.lightOff(RADOI_FREQUENCY_ADDRESS_B);
+                centerWidget->finishB();
             }
             t.task_finishTime = QDateTime::currentDateTime();
-
+            doingTasks.removeAt(i);
             //更新任务完成时间
             QString updateSql = "update agv_task set task_finishTime=? where id=?";;
             QStringList params;
@@ -250,8 +294,6 @@ void ControlCenter::onTaskFinish(int taskId)
                 mbox.setButtonText (QMessageBox::No,QStringLiteral("取 消"));
                 mbox.exec();
             }
-
-            doingTasks.removeAt(i);
             break;
         }
     }

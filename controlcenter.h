@@ -12,6 +12,8 @@ class ControlCenter : public QObject
 public:
     explicit ControlCenter(QObject *parent = nullptr);
     bool init();
+
+    void cancelTask(int aOrB);
 signals:
 
 public slots:

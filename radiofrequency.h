@@ -5,8 +5,8 @@
 #include <QTimer>
 #include <QSerialPort>
 
-#define RADOI_FREQUENCY_ADDRESS_A  0x07
-#define RADOI_FREQUENCY_ADDRESS_B  0x08
+#define RADOI_FREQUENCY_ADDRESS_A  0x08
+#define RADOI_FREQUENCY_ADDRESS_B  0x07
 
 class RadioFrequency : public QObject
 {
