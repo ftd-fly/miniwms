@@ -339,12 +339,86 @@ void CenterWidget::clear()
 
 void CenterWidget::cancelA()
 {
-    controlCenter.cancelTask(RADOI_FREQUENCY_ADDRESS_A);
+    QMessageBox mbox(QMessageBox::NoIcon,QStringLiteral("确认取消"),QStringLiteral("确认取消正在执行的A任务?"),QMessageBox::Yes | QMessageBox::No, this);
+    mbox.setStyleSheet(
+                "QPushButton {"
+                "font:30px;"
+                "padding-left:100px;"
+                "padding-right:100px;"
+                "padding-top:40px;"
+                "padding-bottom:40px;"
+                "}"
+                "QLabel { font:30px;}"
+                );
+    mbox.setButtonText (QMessageBox::Yes,QStringLiteral("确 定"));
+    mbox.setButtonText (QMessageBox::No,QStringLiteral("取 消"));
+
+    int r = mbox.exec();
+    if(r==QMessageBox::Yes)
+    {
+        controlCenter.cancelTask(RADOI_FREQUENCY_ADDRESS_A);
+
+        QMessageBox mbox2(QMessageBox::NoIcon,QStringLiteral("确认状态"),QStringLiteral("刚取消了正在执行的任务A，待状态可以继续执行后续任务后，请点击确认?"),QMessageBox::Yes, this);
+        mbox2.setStyleSheet(
+                    "QPushButton {"
+                    "font:30px;"
+                    "padding-left:100px;"
+                    "padding-right:100px;"
+                    "padding-top:40px;"
+                    "padding-bottom:40px;"
+                    "}"
+                    "QLabel { font:30px;}"
+                    );
+        mbox2.setButtonText (QMessageBox::Yes,QStringLiteral("确 定"));
+
+        int rr = mbox2.exec();
+        if(rr==QMessageBox::Yes)
+        {
+            controlCenter.recover();
+        }
+    }
 }
 
 void CenterWidget::cancelB()
 {
-    controlCenter.cancelTask(RADOI_FREQUENCY_ADDRESS_B);
+    QMessageBox mbox(QMessageBox::NoIcon,QStringLiteral("确认取消"),QStringLiteral("确认取消正在执行的B任务?"),QMessageBox::Yes | QMessageBox::No, this);
+    mbox.setStyleSheet(
+                "QPushButton {"
+                "font:30px;"
+                "padding-left:100px;"
+                "padding-right:100px;"
+                "padding-top:40px;"
+                "padding-bottom:40px;"
+                "}"
+                "QLabel { font:30px;}"
+                );
+    mbox.setButtonText (QMessageBox::Yes,QStringLiteral("确 定"));
+    mbox.setButtonText (QMessageBox::No,QStringLiteral("取 消"));
+
+    int r = mbox.exec();
+    if(r==QMessageBox::Yes)
+    {
+        controlCenter.cancelTask(RADOI_FREQUENCY_ADDRESS_B);
+
+        QMessageBox mbox2(QMessageBox::NoIcon,QStringLiteral("确认状态"),QStringLiteral("刚取消了任务，待状态可以继续执行后续任务后，请点击确认?"),QMessageBox::Yes, this);
+        mbox2.setStyleSheet(
+                    "QPushButton {"
+                    "font:30px;"
+                    "padding-left:100px;"
+                    "padding-right:100px;"
+                    "padding-top:40px;"
+                    "padding-bottom:40px;"
+                    "}"
+                    "QLabel { font:30px;}"
+                    );
+        mbox2.setButtonText (QMessageBox::Yes,QStringLiteral("确 定"));
+
+        int rr = mbox2.exec();
+        if(rr==QMessageBox::Yes)
+        {
+            controlCenter.recover();
+        }
+    }
 }
 
 void CenterWidget::finishA()

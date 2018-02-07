@@ -46,6 +46,7 @@ bool ControlCenter::init()
 
 void ControlCenter::cancelTask(int aOrB)
 {
+    tasktimer.stop();
     //cancel task a
     if(aOrB == RADOI_FREQUENCY_ADDRESS_A)
     {
@@ -80,6 +81,11 @@ void ControlCenter::cancelTask(int aOrB)
             }
         }
     }
+}
+
+void ControlCenter::recover()
+{
+    tasktimer.start();
 }
 
 void ControlCenter::onButtn(int address)

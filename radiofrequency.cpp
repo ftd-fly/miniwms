@@ -10,6 +10,9 @@ RadioFrequency::RadioFrequency(QObject *parent) : QObject(parent)
 
     queryTimer.setInterval(150);
     connect(&queryTimer,&QTimer::timeout,this,&RadioFrequency::queryStatus);
+
+    sendTimer.setInterval(50);
+    connect(&sendTimer,&QTimer::timeout,this,&RadioFrequency::onSend);
 }
 
 RadioFrequency::~RadioFrequency()
@@ -76,6 +79,7 @@ bool RadioFrequency::init()
 
         return false;
     }
+    sendTimer.start();
     queryTimer.start();
     //成功
     return true;
@@ -101,14 +105,17 @@ void RadioFrequency::onRead()
             else
                 index = indexA;
         }
-        if(index+7>=buffer.length())return ;
-        //这里判定了要处理的是不是整个包
+        if(index+1>=buffer.length())return ;
+
+        //查询按钮状态返回，长度为7
         if(0x03 == buffer.at(index+1))
         {
+            if(index+7>=buffer.length())return ;
             //长度为7
             QByteArray statusMsg = buffer.mid(index,7);
             int status = statusMsg.at(3);
             if(statusMsg.at(0) == RADOI_FREQUENCY_ADDRESS_A ){
+                queryOk  = true;
                 if(status==0x03){
 
                     ++APushTime;
@@ -127,7 +134,9 @@ void RadioFrequency::onRead()
                     APushTime = 0;
                 }
             }else if(statusMsg.at(0) == RADOI_FREQUENCY_ADDRESS_B ){
-                if(status==0x03){
+                queryOk  = true;
+                if(status==0x03)
+                {
                     ++BPushTime;
                     if(BPushTime>=3){
                         qDebug("B PUSH!");
@@ -147,9 +156,11 @@ void RadioFrequency::onRead()
             buffer = buffer.right(buffer.length()-index-7);
         }else if(0x10 == buffer.at(index+1))
         {
+            if(index+8>=buffer.length())return ;
             //长度为8
             QByteArray setLightMsg = buffer.mid(index,8);
-            //TODO:设置灯成功？是否需要进行处理呢？不需要
+            //这里其实分不清，是light的开还是关[并没有标志]
+            lightOk = true;
             buffer = buffer.right(buffer.length()-index-8);
         }
     }
@@ -163,10 +174,7 @@ void RadioFrequency::lightOn(int address)
     qint16 crc = checksum(sendCmd);
     sendCmd += (char )(crc>>8 & 0xff);
     sendCmd += (char )(crc & 0xff);
-    if(serial->isOpen() && serial->isWritable())
-    {
-        serial->write(sendCmd);
-    }
+    sendQueue.enqueue(qMakePair(SEND_TYPE_LIGHT,sendCmd));
 }
 
 void RadioFrequency::lightOff(int address)
@@ -176,9 +184,54 @@ void RadioFrequency::lightOff(int address)
     qint16 crc = checksum(sendCmd);
     sendCmd += (char )(crc>>8 & 0xff);
     sendCmd += (char )(crc & 0xff);
-    if(serial->isOpen() && serial->isWritable())
+    sendQueue.enqueue(qMakePair(SEND_TYPE_LIGHT, sendCmd));
+}
+
+void RadioFrequency::onSend()
+{
+    if(sendQueue.length()>0)
     {
-        serial->write(sendCmd);
+        QPair<SEND_TYPE,QByteArray> sendData = sendQueue.dequeue();
+        if(serial->isOpen() && serial->isWritable())
+        {
+            if(sendData.first == SEND_TYPE_QUERY)
+            {
+                int sendTimes = 0;
+                while(true){
+                    queryOk = false;
+                    serial->write(sendData.second);
+                    ++sendTimes;
+                    int t = 0;
+                    while(true)
+                    {
+                        QyhSleep(20);
+                        ++t;
+                        if(queryOk)break;//发送OK了
+                        if(t>=10)break;//等待超时了[20ms*10 = 200ms]
+                    }
+                    if(queryOk)break;
+                    if(sendTimes>=4)break;//发送3次[200ms *3 = 600ms]都没有成功，那就算了
+                }
+            }else if(sendData.first == SEND_TYPE_LIGHT)
+            {
+                int sendTimes = 0;
+                while(true){
+                    lightOk = false;
+                    serial->write(sendData.second);
+                    ++sendTimes;
+                    int t = 0;
+                    while(true)
+                    {
+                        QyhSleep(20);
+                        ++t;
+                        if(lightOk)break;//发送OK了
+                        if(t>=10)break;//等待超时了[20ms*10 = 200ms]
+                    }
+                    if(lightOk)break;
+                    if(sendTimes>=4)break;//发送3次都没有成功，那就算了
+                }
+            }
+        }
     }
 }
 
@@ -191,11 +244,11 @@ void RadioFrequency::queryStatus()
     QByteArray query;
     if(isQueryA){
         //A的地址是0x07
-        const unsigned char str[] = {0x07, 0x03, 0x00, 0x08, 0x00, 0x01,};
+        const unsigned char str[] = {RADOI_FREQUENCY_ADDRESS_A, 0x03, 0x00, 0x08, 0x00, 0x01,};
         query = QByteArray(reinterpret_cast<const char*>(&str[0]),std::extent<decltype(str)>::value);
     }else{
         //B的地址是0x08
-        const unsigned char str[] = {0x08, 0x03, 0x00, 0x08, 0x00, 0x01,};
+        const unsigned char str[] = {RADOI_FREQUENCY_ADDRESS_B, 0x03, 0x00, 0x08, 0x00, 0x01,};
         query = QByteArray(reinterpret_cast<const char*>(&str[0]),std::extent<decltype(str)>::value);
     }
 
@@ -204,8 +257,5 @@ void RadioFrequency::queryStatus()
     query += (char )(crc>>8 & 0xff);
     query += (char )(crc & 0xff);
 
-    if(serial->isOpen() && serial->isWritable())
-    {
-        serial->write(query);
-    }
+    sendQueue.enqueue(qMakePair(SEND_TYPE_QUERY,query));
 }

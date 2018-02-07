@@ -12,8 +12,9 @@ class ControlCenter : public QObject
 public:
     explicit ControlCenter(QObject *parent = nullptr);
     bool init();
-
+    //取消任务 取消任务会暂停未进行的任务的执行，直到调用恢复
     void cancelTask(int aOrB);
+    void recover();
 signals:
 
 public slots:
