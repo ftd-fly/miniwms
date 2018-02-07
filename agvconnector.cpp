@@ -91,7 +91,7 @@ void AgvConnector::processOneJson(QString json)
             emit finish(taskId);
         }else if(status == ERROR && lastStatus != status){
             emit error();
-        }else if(status == CANCELLED && lastStatus != status){
+        }else if(status == IDLING && lastStatus != status){
             emit cancel(taskId);
         }
         lastStatus = status;

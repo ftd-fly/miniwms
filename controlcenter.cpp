@@ -53,7 +53,6 @@ void ControlCenter::cancelTask(int aOrB)
         {
             if(doingTasks.at(i).line == Task::LineA){
                 Task t = doingTasks.at(i);
-                doingTasks.removeAt(i);
                 rf.lightOff(RADOI_FREQUENCY_ADDRESS_A);
                 foreach (auto a, agvs) {
                     if(a->getId() == t.excuteAgv){
@@ -71,7 +70,6 @@ void ControlCenter::cancelTask(int aOrB)
             if(doingTasks.at(i).line == Task::LineB)
             {
                 Task t = doingTasks.at(i);
-                doingTasks.removeAt(i);
                 rf.lightOff(RADOI_FREQUENCY_ADDRESS_B);
                 foreach (auto a, agvs) {
                     if(a->getId() == t.excuteAgv){

@@ -11,23 +11,18 @@ public:
     explicit WidgetGood(int _code,int _type,int _iHasGood = 0,bool _needRotate = false,QWidget *parent = nullptr);
 
     int hasGood(){return iHasGood;}
-    void setHasGood(int _iHasGood){iHasGood=_iHasGood;update();}
+    void setHasGood(int _iHasGood);
 
-    void setTakeFlicker(bool f);
-
-    void setPutFlicker(bool f);
-
+    void setStatus(int _status);
+    int getStatus(){return status;}
 signals:
 
 public slots:
-    void onTakeFlicker();
-    void onPutFlicker();
+    void onStatusTimer();
     void onClicked();
 protected:
     void paintEvent(QPaintEvent *event);
     bool event(QEvent* e);
-
-
     void mousePressEvent(QMouseEvent* event);      //单击
     void mouseDoubleClickEvent(QMouseEvent * event);
 private:
@@ -36,12 +31,21 @@ private:
     bool needRotate;//是否需要旋转
     bool mouseover;
     int type;
-    QTimer takeFlickerTimer;
-    bool takeFlickerOn;
-    QTimer putFlickerTimer;
-    bool putFlickerOn;
+
+    QTimer statusTimer;
+    bool statusOn;
 
     QTimer clicktimer;   //定时器
+public:
+    enum{
+        GOOD_STATUS_NO = 0,//无货状态// 固定灰色
+        GOOD_STATUS_YES = 1,//有货状态// 固定蓝色
+        GOOD_STATUS_TAKING = 2,//取货中状态//蓝色 灰色交替
+        GOOD_STATUS_TOPUT = 3,//可放货状态//黄色 灰色交替
+        GOOD_STATUS_TOTAKE = 4,//可取货状态//蓝色 红色边框
+    };
+private:
+    int status;
 };
 
 #endif // WIDGETGOOD_H

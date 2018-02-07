@@ -15,6 +15,11 @@ void CenterWidget::init()
     column = configure.getValue("solution"+solutionPrefix+"/column").toInt();
     rowA = configure.getValue("solution"+solutionPrefix+"/rowA").toInt();
 
+    nextPutRowA = configure.getValue("solution"+solutionPrefix+"/nextPutRowA").toInt();
+    nextPutColumnA = configure.getValue("solution"+solutionPrefix+"/nextPutColumnA").toInt();
+    nextPutRowB = configure.getValue("solution"+solutionPrefix+"/nextPutRowB").toInt();
+    nextPutColumnB = configure.getValue("solution"+solutionPrefix+"/nextPutColumnB").toInt();
+
     //初始化所有的按钮、货物
     for(int j=0;j<row;++j)
     {
@@ -36,7 +41,8 @@ void CenterWidget::init()
 
     //对货物的摆放方式进行设置
     initGoodPosition();
-
+    oldtakeABtn = new QPushButton(QStringLiteral("A取货"));
+    oldtakeBBtn = new QPushButton(QStringLiteral("B取货"));
     takeABtn = new QyhClickLabel(QStringLiteral("A空闲"));
     takeBBtn = new QyhClickLabel(QStringLiteral("B空闲"));
     QPushButton *clearBtn = new QPushButton(QStringLiteral("清空所有"));
@@ -45,6 +51,10 @@ void CenterWidget::init()
 
     connect(cancelABtn,SIGNAL(clicked(bool)),this,SLOT(cancelA()));
     connect(cancelBBtn,SIGNAL(clicked(bool)),this,SLOT(cancelB()));
+
+    connect(oldtakeABtn,SIGNAL(clicked(bool)),this,SLOT(takeA()));
+    connect(oldtakeBBtn,SIGNAL(clicked(bool)),this,SLOT(takeB()));
+
     connect(clearBtn,SIGNAL(clicked(bool)),this,SLOT(clear()));
 
     cancelABtn->setEnabled(false);
@@ -61,7 +71,15 @@ void CenterWidget::init()
     testTwoBtnHlayout->addWidget(cancelABtn);
     testTwoBtnHlayout->addSpacing(100);
     testTwoBtnHlayout->addWidget(cancelBBtn);
+
+    //这两个按钮仅用于调试
+    testTwoBtnHlayout->addSpacing(100);
+    testTwoBtnHlayout->addWidget(oldtakeABtn);
+    testTwoBtnHlayout->addSpacing(100);
+    testTwoBtnHlayout->addWidget(oldtakeBBtn);
+
     testTwoBtnHlayout->addStretch(1);
+
 
     //显示累计值
     QLabel *todayAll = new QLabel(QStringLiteral("今天共计运送:"));
@@ -109,9 +127,11 @@ void CenterWidget::init()
 
     //水平居中
     QHBoxLayout *hlayout = new QHBoxLayout;
+    hlayout->addStretch(1);
     hlayout->addWidget(centergroup,2);
     hlayout->addSpacing(10);
     hlayout->addItem(countlayout);
+    hlayout->addStretch(1);
 
     //竖直居中
     QVBoxLayout *vlayout = new QVBoxLayout;
@@ -272,6 +292,12 @@ void CenterWidget::save()
             configure.setValue(QString("solution"+solutionPrefix+"/hasGood/%1/%2").arg(i).arg(j),widgetGoods.at(i*column+j)->hasGood());
         }
     }
+
+    configure.setValue(QString("solution"+solutionPrefix+"/nextPutRowA"),nextPutRowA);
+    configure.setValue(QString("solution"+solutionPrefix+"/nextPutRowB"),nextPutRowB);
+    configure.setValue(QString("solution"+solutionPrefix+"/nextPutColumnA"),nextPutColumnA);
+    configure.setValue(QString("solution"+solutionPrefix+"/nextPutColumnB"),nextPutColumnB);
+
     //保存到配置文件
     configure.save();
 }
@@ -300,6 +326,11 @@ void CenterWidget::clear()
             good->setHasGood(0);
         }
 
+        nextPutRowA = 0;
+        nextPutColumnA = 0;
+        nextPutRowB = rowA;
+        nextPutColumnB = 0;
+
         save();
 
         updateNext();
@@ -326,6 +357,52 @@ void CenterWidget::finishB()
     onFinishTakeB();
 }
 
+void CenterWidget::updateNextPutA()
+{
+    //发生了取货、放货、删除货物三种操作
+    //1.判断放货
+    if(nextPutRowA>=0 && nextPutColumnA>=0 && widgetGoods.at(nextPutRowA*column+nextPutColumnA)->hasGood()>0)
+    {
+        //放货了，往下移
+        nextPutColumnA += 1;
+        if(nextPutColumnA == column){
+            //这行满了，那么就另寻一行
+            int tempRow = -1,tempColumn = -1;
+            for(int k=0;k<rowA;++k)
+            {
+                for(int m=column-1;m>=0;--m)
+                {
+                    if(widgetGoods.at(k*column+m)->hasGood()>0){
+                        break;
+                    }else{
+                        tempRow=k;
+                        tempColumn=m;
+                    }
+                }
+                if(tempRow>=0&&tempColumn>=0)break;
+            }
+            //找到了
+            if(tempRow>=0&&tempColumn>=0){
+                nextPutColumnA = tempColumn;
+                nextPutRowA = tempRow;
+            }else{
+                nextPutRowA = 0;
+                nextPutColumnA = -1;
+            }
+        }
+    }
+    //2.判断取货
+
+
+
+    //3.删除货物
+
+}
+
+void CenterWidget::updateNextPutB()
+{
+
+}
 
 void CenterWidget::updateNext()
 {
@@ -360,114 +437,122 @@ void CenterWidget::updateNext()
     }
 
     foreach (auto p, widgetGoods) {
-        p->setTakeFlicker(false);
+        p->setStatus(p->hasGood()>0?WidgetGood::GOOD_STATUS_YES:WidgetGood::GOOD_STATUS_NO);
     }
 
     if(minA<=0){
         nextTakeColumnA = -1;
         nextTakeRowA = -1;
     }else{
-        widgetGoods.at(nextTakeRowA*column+nextTakeColumnA)->setTakeFlicker(true);
+        widgetGoods.at(nextTakeRowA*column+nextTakeColumnA)->setStatus(WidgetGood::GOOD_STATUS_TOTAKE);
     }
 
     if(minB<=0){
         nextTakeColumnB = -1;
         nextTakeRowB = -1;
     }else{
-        widgetGoods.at(nextTakeRowB*column+nextTakeColumnB)->setTakeFlicker(true);
+        widgetGoods.at(nextTakeRowB*column+nextTakeColumnB)->setStatus(WidgetGood::GOOD_STATUS_TOTAKE);
     }
 
-    //计算takeA的位置
-    bool findA = false;
-    for(int i=0;i<rowA;++i)
-    {
-        bool rowHasGood = false;//该行是否有货
-        for(int j=0;j<column;++j){
-            if(widgetGoods.at(i*column + j)->hasGood()>0){
-                rowHasGood = true;
-                break;
-            }
-        }
-        if(!rowHasGood)
-        {
-            //这行没货，那么放货位置就是头部位置
-            nextPutColumnA = 0;
-            nextPutRowA = i;
-            findA = true;
-            break;
-        }else{
-            //找到第一个有货后边无货的位置
-            if(widgetGoods.at(i*column+column-1)->hasGood()>0){
-                //该行最后一个也是货物，那么这行没法放货物了
-                continue;
-            }else{
-                for(int j=column-2;j>=0;--j){
-                    if(widgetGoods.at(i*column + j)->hasGood()>0){
-                        //该行最后一个货物的位置是j+1
-                        nextPutColumnA = j+1;
-                        nextPutRowA = i;
-                        findA = true;
-                        break;
-                    }
-                }
-                if(findA)break;
-            }
-        }
-    }
 
-    //计算takeB的位置
-    bool findB = false;
-    for(int i=rowA;i<row;++i)
-    {
-        bool rowHasGood = false;//该行是否有货
-        for(int j=0;j<column;++j){
-            if(widgetGoods.at(i*column + j)->hasGood()>0){
-                rowHasGood = true;
-                break;
-            }
-        }
-        if(!rowHasGood)
-        {
-            //这行没货，那么放货位置就是头部位置
-            nextPutColumnB = 0;
-            nextPutRowB = i;
-            findB = true;
-            break;
-        }else{
-            //找到第一个有货后边无货的位置
-            if(widgetGoods.at(i*column+column-1)->hasGood()>0){
-                //该行最后一个也是货物，那么这行没法放货物了
-                continue;
-            }else{
-                for(int j=column-2;j>=0;--j){
-                    if(widgetGoods.at(i*column + j)->hasGood()>0){
-                        //该行最后一个货物的位置是j+1
-                        nextPutColumnB = j+1;
-                        nextPutRowB = i;
-                        findB = true;
-                        break;
-                    }
-                }
-                if(findB)break;
-            }
-        }
-    }
-    if(!findA){
-        nextPutColumnA = -1;
-        nextPutRowA = -1;
-    }
-    if(!findB){
-        nextPutColumnB = -1;
-        nextPutRowB = -1;
-    }
+
+    //    //计算putA的位置
+    //    bool findA = false;
+    //    for(int i=0;i<rowA;++i)
+    //    {
+    //        bool rowHasGood = false;//该行是否有货
+    //        for(int j=0;j<column;++j){
+    //            if(widgetGoods.at(i*column + j)->hasGood()>0){
+    //                rowHasGood = true;
+    //                break;
+    //            }
+    //        }
+    //        if(!rowHasGood)
+    //        {
+    //            //这行没货，那么放货位置就是头部位置
+    //            nextPutColumnA = 0;
+    //            nextPutRowA = i;
+    //            findA = true;
+    //            break;
+    //        }else{
+    //            //找到第一个有货后边无货的位置
+    //            if(widgetGoods.at(i*column+column-1)->hasGood()>0){
+    //                //该行最后一个也是货物，那么这行没法放货物了
+    //                continue;
+    //            }else{
+    //                for(int j=column-2;j>=0;--j){
+    //                    if(widgetGoods.at(i*column + j)->hasGood()>0){
+    //                        //该行最后一个货物的位置是j+1
+    //                        nextPutColumnA = j+1;
+    //                        nextPutRowA = i;
+    //                        findA = true;
+    //                        break;
+    //                    }
+    //                }
+    //                if(findA)break;
+    //            }
+    //        }
+    //    }
+
+    //    //计算putB的位置
+    //    bool findB = false;
+    //    for(int i=rowA;i<row;++i)
+    //    {
+    //        bool rowHasGood = false;//该行是否有货
+    //        for(int j=0;j<column;++j){
+    //            if(widgetGoods.at(i*column + j)->hasGood()>0){
+    //                rowHasGood = true;
+    //                break;
+    //            }
+    //        }
+    //        if(!rowHasGood)
+    //        {
+    //            //这行没货，那么放货位置就是头部位置
+    //            nextPutColumnB = 0;
+    //            nextPutRowB = i;
+    //            findB = true;
+    //            break;
+    //        }else{
+    //            //找到第一个有货后边无货的位置
+    //            if(widgetGoods.at(i*column+column-1)->hasGood()>0){
+    //                //该行最后一个也是货物，那么这行没法放货物了
+    //                continue;
+    //            }else{
+    //                for(int j=column-2;j>=0;--j){
+    //                    if(widgetGoods.at(i*column + j)->hasGood()>0){
+    //                        //该行最后一个货物的位置是j+1
+    //                        nextPutColumnB = j+1;
+    //                        nextPutRowB = i;
+    //                        findB = true;
+    //                        break;
+    //                    }
+    //                }
+    //                if(findB)break;
+    //            }
+    //        }
+    //    }
+    //    if(!findA){
+    //        nextPutColumnA = -1;
+    //        nextPutRowA = -1;
+    //    }
+    //    if(!findB){
+    //        nextPutColumnB = -1;
+    //        nextPutRowB = -1;
+    //    }
 
     for(int i=0;i<row;++i)
     {
         for(int j=0;j<column;++j){
             if( (i==nextPutRowA && j == nextPutColumnA) || (i==nextPutRowB && j == nextPutColumnB))
-                widgetGoods.at(i*column+j)->setPutFlicker(true);
-            else
-                widgetGoods.at(i*column+j)->setPutFlicker(false);
+                widgetGoods.at(i*column+j)->setStatus(WidgetGood::GOOD_STATUS_TOPUT);
+        }
+    }
+
+    for(int i=0;i<row;++i)
+    {
+        for(int j=0;j<column;++j){
+            if( (i==takingRowA && j == takingColumnA) || (i==takingRowB && j == takingColumnB))
+                widgetGoods.at(i*column+j)->setStatus(WidgetGood::GOOD_STATUS_TAKING);
         }
     }
 
@@ -516,7 +601,39 @@ void CenterWidget::addGood(int add_row, int add_column)
             mbox.exec();
         }else{
             widgetGoods.at(add_row*column+add_column)->setHasGood(++maxA);
+
+            assert(add_row == nextPutRowA && add_column == nextPutColumnA);
+            //放货了，往下移
+            nextPutColumnA += 1;
+            if(nextPutColumnA == column){
+                //这行满了，那么就另寻一行
+                int tempRow = -1,tempColumn = -1;
+                for(int k=0;k<rowA;++k)
+                {
+                    for(int m=column-1;m>=0;--m)
+                    {
+                        int status = widgetGoods.at(k*column+m)->getStatus();
+                        if(status != WidgetGood::GOOD_STATUS_NO && status != WidgetGood::GOOD_STATUS_TOPUT){
+                            break;
+                        }else{
+                            tempRow=k;
+                            tempColumn=m;
+                        }
+                    }
+                    if(tempRow>=0&&tempColumn>=0)break;
+                }
+                //找到了
+                if(tempRow>=0&&tempColumn>=0){
+                    nextPutColumnA = tempColumn;
+                    nextPutRowA = tempRow;
+                }else{
+                    nextPutRowA = 0;
+                    nextPutColumnA = -1;
+                }
+            }
+
             save();
+
             updateNext();
         }
     }else{
@@ -539,10 +656,52 @@ void CenterWidget::addGood(int add_row, int add_column)
             mbox.exec();
         }else{
             widgetGoods.at(add_row*column+add_column)->setHasGood(++maxB);
+
+            assert(add_row == nextPutRowB && add_column == nextPutColumnB);
+
+            nextPutColumnB += 1;
+            if(nextPutColumnB == column)
+            {
+                //找到第一个有货后边无货的位置
+                int tempRow = -1,tempColumn = -1;
+                for(int k=rowA;k<row;++k)
+                {
+                    for(int m=column-1;m>=0;--m)
+                    {
+                        int status = widgetGoods.at(k*column+m)->getStatus();
+                        if(status != WidgetGood::GOOD_STATUS_NO && status != WidgetGood::GOOD_STATUS_TOPUT){
+                            break;
+                        }else{
+                            tempRow=k;
+                            tempColumn=m;
+                        }
+                    }
+                    if(tempRow>=0&&tempColumn>=0)break;
+                }
+                //找到了
+                if(tempRow>=0&&tempColumn>=0){
+                    nextPutColumnB = tempColumn;
+                    nextPutRowB = tempRow;
+                }else{
+                    nextPutRowB = rowA;
+                    nextPutColumnB = -1;
+                }
+            }
+
             save();
             updateNext();
         }
     }
+}
+
+void CenterWidget::takeA()
+{
+    controlCenter.onButtn(RADOI_FREQUENCY_ADDRESS_A);
+}
+
+void CenterWidget::takeB()
+{
+    controlCenter.onButtn(RADOI_FREQUENCY_ADDRESS_B);
 }
 
 void CenterWidget::removeGood(int remove_row,int remove_column)
@@ -564,6 +723,194 @@ void CenterWidget::removeGood(int remove_row,int remove_column)
         mbox.exec();
     }else{
         widgetGoods.at(remove_row*column+remove_column)->setHasGood(0);
+
+        if(remove_row<rowA)
+        {
+            //A
+            if((remove_row == nextPutRowA && remove_column == nextPutColumnA - 1 )|| (nextPutRowA ==0 && nextPutColumnA == -1))
+            {
+                int tempColumn = -1;
+                for(int m=column-1;m>=0;--m)
+                {
+                    int status = widgetGoods.at(remove_row*column+m)->getStatus();
+                    if(status != WidgetGood::GOOD_STATUS_NO && status != WidgetGood::GOOD_STATUS_TOPUT){
+                        break;
+                    }else{
+                        tempColumn=m;
+                    }
+                }
+                if(tempColumn >= 0)
+                {
+                    nextPutRowA = remove_row;
+                    nextPutColumnA = tempColumn;
+                }
+
+                while(true){
+                    if(nextPutColumnA == 0 && nextPutRowA >0)
+                    {
+                        //上一行是否有空位置
+                        tempColumn = -1;
+                        for(int m=column-1;m>=0;--m)
+                        {
+                            int status = widgetGoods.at((nextPutRowA - 1)*column+m)->getStatus();
+                            if(status != WidgetGood::GOOD_STATUS_NO && status != WidgetGood::GOOD_STATUS_TOPUT){
+                                break;
+                            }else{
+                                tempColumn=m;
+                            }
+                        }
+                        if(tempColumn >= 0)
+                        {
+                            nextPutRowA = nextPutRowA - 1;
+                            nextPutColumnA = tempColumn;
+                        }else{
+                            break;
+                        }
+                    }else{
+                        break;
+                    }
+                }
+            }else if(remove_row +1 == nextPutRowA && nextPutColumnA == 0)
+            {
+                //找上一行的最后的空位位置
+                int tempColumn = -1;
+                for(int m=column-1;m>=0;--m)
+                {
+                    int status = widgetGoods.at(remove_row*column+m)->getStatus();
+                    if(status != WidgetGood::GOOD_STATUS_NO && status != WidgetGood::GOOD_STATUS_TOPUT){
+                        break;
+                    }else{
+                        tempColumn=m;
+                        break;
+                    }
+                }
+
+                //找到了
+                if(tempColumn>=0){
+                    nextPutColumnA = tempColumn;
+                    nextPutRowA = remove_row;
+                }
+
+                while(true){
+                    if(nextPutColumnA == 0 && nextPutRowA >0)
+                    {
+                        //上一行是否有空位置
+                        tempColumn = -1;
+                        for(int m=column-1;m>=0;--m)
+                        {
+                            int status = widgetGoods.at((nextPutRowA - 1)*column+m)->getStatus();
+                            if(status != WidgetGood::GOOD_STATUS_NO && status != WidgetGood::GOOD_STATUS_TOPUT){
+                                break;
+                            }else{
+                                tempColumn=m;
+                            }
+                        }
+                        if(tempColumn >= 0)
+                        {
+                            nextPutRowA = nextPutRowA - 1;
+                            nextPutColumnA = tempColumn;
+                        }else{
+                            break;
+                        }
+                    }else{
+                        break;
+                    }
+                }
+            }
+        }else{
+            //B
+            if((remove_row == nextPutRowB && remove_column == nextPutColumnB - 1 )|| (nextPutRowB == rowA && nextPutColumnB == -1))
+            {
+                int tempColumn = -1;
+                for(int m=column-1;m>=0;--m)
+                {
+                    int status = widgetGoods.at(remove_row*column+m)->getStatus();
+                    if(status != WidgetGood::GOOD_STATUS_NO && status != WidgetGood::GOOD_STATUS_TOPUT){
+                        break;
+                    }else{
+                        tempColumn=m;
+                    }
+                }
+                if(tempColumn >= 0)
+                {
+                    nextPutRowB = remove_row;
+                    nextPutColumnB = tempColumn;
+                }
+
+                while(true){
+                    if(nextPutColumnB == 0 && nextPutRowB > rowA)
+                    {
+                        //上一行是否有空位置
+                        tempColumn = -1;
+                        for(int m=column-1;m>=0;--m)
+                        {
+                            int status = widgetGoods.at((nextPutRowB - 1)*column+m)->getStatus();
+                            if(status != WidgetGood::GOOD_STATUS_NO && status != WidgetGood::GOOD_STATUS_TOPUT){
+                                break;
+                            }else{
+                                tempColumn=m;
+                            }
+                        }
+                        if(tempColumn >= 0)
+                        {
+                            nextPutRowB = nextPutRowB - 1;
+                            nextPutColumnB = tempColumn;
+                        }else{
+                            break;
+                        }
+                    }else{
+                        break;
+                    }
+                }
+            }else if(remove_row +1 == nextPutRowB && nextPutColumnB == 0)
+            {
+                //找上一行的最后的空位位置
+                int tempColumn = -1;
+                for(int m=column-1;m>=0;--m)
+                {
+                    int status = widgetGoods.at(remove_row*column+m)->getStatus();
+                    if(status != WidgetGood::GOOD_STATUS_NO && status != WidgetGood::GOOD_STATUS_TOPUT){
+                        break;
+                    }else{
+                        tempColumn=m;
+                        break;
+                    }
+                }
+
+                //找到了
+                if(tempColumn>=0){
+                    nextPutColumnB = tempColumn;
+                    nextPutRowB = remove_row;
+                }
+
+                while(true){
+                    if(nextPutColumnB == 0 && nextPutRowB > rowA)
+                    {
+                        //上一行是否有空位置
+                        tempColumn = -1;
+                        for(int m=column-1;m>=0;--m)
+                        {
+                            int status = widgetGoods.at((nextPutRowB-1)*column+m)->getStatus();
+                            if(status != WidgetGood::GOOD_STATUS_NO && status != WidgetGood::GOOD_STATUS_TOPUT){
+                                break;
+                            }else{
+                                tempColumn=m;
+                            }
+                        }
+                        if(tempColumn >= 0)
+                        {
+                            nextPutRowB = nextPutRowB - 1;
+                            nextPutColumnB = tempColumn;
+                        }else{
+                            break;
+                        }
+                    }else{
+                        break;
+                    }
+                }
+            }
+        }
+
         save();
         updateNext();
     }
@@ -575,6 +922,8 @@ void CenterWidget::onStartTakeA()
     takeABtn->setText(QStringLiteral("正在取货A中..."));
     takeABtn->setFlicker(true);
     cancelABtn->setEnabled(true);
+    takingRowA = nextTakeRowA;
+    takingColumnA = nextTakeColumnA;
 }
 
 void CenterWidget::onStartTakeB()
@@ -582,6 +931,8 @@ void CenterWidget::onStartTakeB()
     takeBBtn->setText(QStringLiteral("正在取货B中..."));
     takeBBtn->setFlicker(true);
     cancelBBtn->setEnabled(true);
+    takingRowB = nextTakeRowB;
+    takingColumnB = nextTakeColumnB;
 }
 
 void CenterWidget::onFinishTakeA()
@@ -589,6 +940,111 @@ void CenterWidget::onFinishTakeA()
     takeABtn->setText(QStringLiteral("A空闲"));
     takeABtn->setFlicker(false);
     cancelABtn->setEnabled(false);
+
+    if(takingColumnA>=0 && takingRowA >=0)
+    {
+        int remove_row = takingRowA;
+        int remove_column = takingColumnA;
+
+        widgetGoods.at(remove_row*column+remove_column)->setHasGood(0);
+
+        //A
+        if((remove_row == nextPutRowA && remove_column == nextPutColumnA - 1 )|| (nextPutRowA ==0 && nextPutColumnA == -1))
+        {
+            int tempColumn = -1;
+            for(int m=column-1;m>=0;--m)
+            {
+                int status = widgetGoods.at(remove_row*column+m)->getStatus();
+                if(status != WidgetGood::GOOD_STATUS_NO && status != WidgetGood::GOOD_STATUS_TOPUT){
+                    break;
+                }else{
+                    tempColumn=m;
+                }
+            }
+            if(tempColumn >= 0)
+            {
+                nextPutRowA = remove_row;
+                nextPutColumnA = tempColumn;
+            }
+
+            while(true){
+                if(nextPutColumnA == 0 && nextPutRowA >0)
+                {
+                    //上一行是否有空位置
+                    tempColumn = -1;
+                    for(int m=column-1;m>=0;--m)
+                    {
+                        int status = widgetGoods.at((nextPutRowA - 1)*column+m)->getStatus();
+                        if(status != WidgetGood::GOOD_STATUS_NO && status != WidgetGood::GOOD_STATUS_TOPUT){
+                            break;
+                        }else{
+                            tempColumn=m;
+                        }
+                    }
+                    if(tempColumn >= 0)
+                    {
+                        nextPutRowA = nextPutRowA - 1;
+                        nextPutColumnA = tempColumn;
+                    }else{
+                        break;
+                    }
+                }else{
+                    break;
+                }
+            }
+        }else if(remove_row +1 == nextPutRowA && nextPutColumnA == 0)
+        {
+            //找上一行的最后的空位位置
+            int tempColumn = -1;
+            for(int m=column-1;m>=0;--m)
+            {
+                int status = widgetGoods.at(remove_row*column+m)->getStatus();
+                if(status != WidgetGood::GOOD_STATUS_NO && status != WidgetGood::GOOD_STATUS_TOPUT){
+                    break;
+                }else{
+                    tempColumn=m;
+                    break;
+                }
+            }
+
+            //找到了
+            if(tempColumn>=0){
+                nextPutColumnA = tempColumn;
+                nextPutRowA = remove_row;
+            }
+
+            while(true){
+                if(nextPutColumnA == 0 && nextPutRowA >0)
+                {
+                    //上一行是否有空位置
+                    tempColumn = -1;
+                    for(int m=column-1;m>=0;--m)
+                    {
+                        int status = widgetGoods.at((nextPutRowA - 1)*column+m)->getStatus();
+                        if(status != WidgetGood::GOOD_STATUS_NO && status != WidgetGood::GOOD_STATUS_TOPUT){
+                            break;
+                        }else{
+                            tempColumn=m;
+                        }
+                    }
+                    if(tempColumn >= 0)
+                    {
+                        nextPutRowA = nextPutRowA - 1;
+                        nextPutColumnA = tempColumn;
+                    }else{
+                        break;
+                    }
+                }else{
+                    break;
+                }
+            }
+        }
+    }
+
+    takingRowA = -1;
+    takingColumnA = -1;
+
+    updateNext();
 }
 
 void CenterWidget::onFinishTakeB()
@@ -596,4 +1052,108 @@ void CenterWidget::onFinishTakeB()
     takeBBtn->setText(QStringLiteral("B空闲"));
     takeBBtn->setFlicker(false);
     cancelBBtn->setEnabled(false);
+
+    if(takingColumnB>=0 && takingRowB >=0)
+    {
+        int remove_row = takingRowB;
+        int remove_column = takingColumnB;
+
+        widgetGoods.at(remove_row*column+remove_column)->setHasGood(0);
+
+        if((remove_row == nextPutRowB && remove_column == nextPutColumnB - 1 )|| (nextPutRowB == rowA && nextPutColumnB == -1))
+        {
+            int tempColumn = -1;
+            for(int m=column-1;m>=0;--m)
+            {
+                int status = widgetGoods.at(remove_row*column+m)->getStatus();
+                if(status != WidgetGood::GOOD_STATUS_NO && status != WidgetGood::GOOD_STATUS_TOPUT){
+                    break;
+                }else{
+                    tempColumn=m;
+                }
+            }
+            if(tempColumn >= 0)
+            {
+                nextPutRowB = remove_row;
+                nextPutColumnB = tempColumn;
+            }
+
+            while(true){
+                if(nextPutColumnB == 0 && nextPutRowB > rowA)
+                {
+                    //上一行是否有空位置
+                    tempColumn = -1;
+                    for(int m=column-1;m>=0;--m)
+                    {
+                        int status = widgetGoods.at(nextPutRowB*column+m)->getStatus();
+                        if(status != WidgetGood::GOOD_STATUS_NO && status != WidgetGood::GOOD_STATUS_TOPUT){
+                            break;
+                        }else{
+                            tempColumn=m;
+                        }
+                    }
+                    if(tempColumn >= 0)
+                    {
+                        nextPutRowB = nextPutRowB - 1;
+                        nextPutColumnB = tempColumn;
+                    }else{
+                        break;
+                    }
+                }else{
+                    break;
+                }
+            }
+        }else if(remove_row +1 == nextPutRowB && nextPutColumnB == 0)
+        {
+            //找上一行的最后的空位位置
+            int tempColumn = -1;
+            for(int m=column-1;m>=0;--m)
+            {
+                int status = widgetGoods.at(remove_row*column+m)->getStatus();
+                if(status != WidgetGood::GOOD_STATUS_NO && status != WidgetGood::GOOD_STATUS_TOPUT){
+                    break;
+                }else{
+                    tempColumn=m;
+                    break;
+                }
+            }
+
+            //找到了
+            if(tempColumn>=0){
+                nextPutColumnB = tempColumn;
+                nextPutRowB = remove_row;
+            }
+
+            while(true){
+                if(nextPutColumnB == 0 && nextPutRowB > rowA)
+                {
+                    //上一行是否有空位置
+                    tempColumn = -1;
+                    for(int m=column-1;m>=0;--m)
+                    {
+                        int status = widgetGoods.at((nextPutRowB - 1)*column+m)->getStatus();
+                        if(status != WidgetGood::GOOD_STATUS_NO && status != WidgetGood::GOOD_STATUS_TOPUT){
+                            break;
+                        }else{
+                            tempColumn=m;
+                        }
+                    }
+                    if(tempColumn >= 0)
+                    {
+                        nextPutRowB = nextPutRowB - 1;
+                        nextPutColumnB = tempColumn;
+                    }else{
+                        break;
+                    }
+                }else{
+                    break;
+                }
+            }
+        }
+    }
+
+    takingRowB = -1;
+    takingColumnB = -1;
+
+    updateNext();
 }

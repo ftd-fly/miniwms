@@ -7,8 +7,7 @@ WidgetGood::WidgetGood(int _code, int _type, int _iHasGood, bool _needRotate, QW
     needRotate(_needRotate),
     mouseover(false),
     type(_type),
-    takeFlickerOn(false),
-    putFlickerOn(false)
+    statusOn(false)
 {
     if(!needRotate)
         this->setFixedSize(configure.getValue("ui/good_width").toInt(),configure.getValue("ui/good_height").toInt());
@@ -16,36 +15,58 @@ WidgetGood::WidgetGood(int _code, int _type, int _iHasGood, bool _needRotate, QW
         this->setFixedSize(configure.getValue("ui/good_height").toInt(),configure.getValue("ui/good_width").toInt());
 
     this->setToolTip(QString(QStringLiteral("堆放点%1_%2_%3")).arg(_type==1?"A":"B").arg(1+((code-1)/column)).arg(1+(code-1)%column));
-    takeFlickerTimer.setInterval(800);
-    connect(&takeFlickerTimer,&QTimer::timeout,this,&WidgetGood::onTakeFlicker);
 
-    putFlickerTimer.setInterval(800);
-    connect(&putFlickerTimer,&QTimer::timeout,this,&WidgetGood::onPutFlicker);
+    if(iHasGood>0){
+        status = GOOD_STATUS_YES;
+    }else{
+        status = GOOD_STATUS_NO;
+    }
+
+    statusTimer.setInterval(800);
+    connect(&statusTimer,&QTimer::timeout,this,&WidgetGood::onStatusTimer);
 
     connect(&clicktimer, &QTimer::timeout,this,&WidgetGood::onClicked);
 }
 
-void WidgetGood::setTakeFlicker(bool f)
-{
-    if(!f){
-        takeFlickerTimer.stop();
-        takeFlickerOn = false;
-        update();
+void WidgetGood::setHasGood(int _iHasGood){
+    iHasGood=_iHasGood;
+    if(iHasGood>0){
+        status = GOOD_STATUS_YES;
     }else{
-        takeFlickerTimer.start();
+        status = GOOD_STATUS_NO;
+    }
+    update();
+}
+
+void WidgetGood::setStatus(int _status)
+{
+    if(_status>=GOOD_STATUS_NO && _status<=GOOD_STATUS_TOTAKE)
+    {
+        status = _status;
+        //两个状态不需要闪烁
+        if(status == GOOD_STATUS_NO || status == GOOD_STATUS_YES)
+        {
+            statusTimer.stop();
+            statusOn = false;
+            update();
+        }
+        //三个状态需要闪烁
+        else if(status == GOOD_STATUS_TAKING){
+            statusTimer.setInterval(450);
+            statusTimer.start();
+            update();
+        }else if(status == GOOD_STATUS_TOPUT){
+            statusTimer.setInterval(800);
+            statusTimer.start();
+            update();
+        }else if(status == GOOD_STATUS_TOTAKE){
+            statusTimer.setInterval(800);
+            statusTimer.start();
+            update();
+        }
     }
 }
 
-void WidgetGood::setPutFlicker(bool f)
-{
-    if(!f){
-        putFlickerTimer.stop();
-        putFlickerOn = false;
-        update();
-    }else{
-        putFlickerTimer.start();
-    }
-}
 
 void WidgetGood::paintEvent(QPaintEvent *event)
 {
@@ -61,16 +82,17 @@ void WidgetGood::paintEvent(QPaintEvent *event)
         pen.setWidth(0);
     }
 
-    if(takeFlickerOn){
-        pen.setWidth(8);
-        pen.setColor("red");
-    }
-
-    QColor c("#0070C0");
-    if(iHasGood<=0)c = QColor("darkgray");
-    if(putFlickerOn)
-    {
-        c = QColor("gold");
+    QColor c("darkgray");
+    if(status == GOOD_STATUS_NO)c = QColor("darkgray");
+    else if(status == GOOD_STATUS_YES)c = QColor("#0070C0");
+    else if(status == GOOD_STATUS_TAKING && statusOn)c = QColor("green");
+    else if(status == GOOD_STATUS_TOPUT&& statusOn)c = QColor("gold");
+    else if(status == GOOD_STATUS_TOTAKE){
+        c = QColor("#0070C0");
+        if(statusOn){
+            pen.setWidth(8);
+            pen.setColor("red");
+        }
     }
     painter.setPen(pen);
     painter.setBrush(c);
@@ -128,14 +150,9 @@ bool WidgetGood::event(QEvent* event)
     return QWidget::event(event);
 }
 
-void WidgetGood::onTakeFlicker(){
-    takeFlickerOn = !takeFlickerOn;
-    update();
-}
-
-void WidgetGood::onPutFlicker()
+void WidgetGood::onStatusTimer()
 {
-    putFlickerOn = !putFlickerOn;
+    statusOn = !statusOn;
     update();
 }
 
@@ -143,7 +160,7 @@ void WidgetGood::onClicked()
 {
     clicktimer.stop();
     //单击事件
-    if(iHasGood<=0 && putFlickerTimer.isActive())
+    if(iHasGood<=0 && status == GOOD_STATUS_TOPUT)
     {
         QString text;
         if(type==1)text= QString("A");
@@ -174,7 +191,7 @@ void WidgetGood::onClicked()
                 centerWidget->addGood(rowA+(code-1)/column,(code-1)%column);
             }
         }
-    }else if(iHasGood > 0){
+    }else if(iHasGood > 0 && (status == GOOD_STATUS_YES||status == GOOD_STATUS_TOTAKE)){
         //点击删除
         QString text;
         if(type==1)text= QString("A");
@@ -221,7 +238,7 @@ void WidgetGood::mouseDoubleClickEvent(QMouseEvent * event)
 {
     clicktimer.stop();
     //左键双击,直接添加
-    if(event->button() == Qt::LeftButton && iHasGood<=0 && putFlickerTimer.isActive())
+    if(event->button() == Qt::LeftButton && iHasGood<=0 && status == GOOD_STATUS_TOPUT)
     {
 
         if(type==1){

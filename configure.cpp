@@ -71,6 +71,52 @@ void Configure::load()
         config_map.insert("solutionC/rowA",3);
     }
 
+    if(!config_map.contains("solutionA/nextPutRowA")){
+        //方案A的货物A的行数
+        config_map.insert("solutionA/nextPutRowA",0);
+    }
+    if(!config_map.contains("solutionB/nextPutRowA")){
+        //方案B的货物A的行数
+        config_map.insert("solutionB/nextPutRowA",0);
+    }
+    if(!config_map.contains("solutionC/nextPutRowA")){
+        //方案C的货物A的行数
+        config_map.insert("solutionC/nextPutRowA",0);
+    }
+
+    if(!config_map.contains("solutionA/nextPutColumnA")){
+        //方案A的货物A的行数
+        config_map.insert("solutionA/nextPutColumnA",0);
+    }
+    if(!config_map.contains("solutionB/nextPutColumnA")){
+        //方案B的货物A的行数
+        config_map.insert("solutionB/nextPutColumnA",0);
+    }
+    if(!config_map.contains("solutionC/nextPutColumnA")){
+        //方案C的货物A的行数
+        config_map.insert("solutionC/nextPutColumnA",0);
+    }
+
+    if(!config_map.contains("solutionA/nextPutRowB")){
+        config_map.insert("solutionA/nextPutRowB",config_map.value("solutionA/rowA").toInt());
+    }
+    if(!config_map.contains("solutionB/nextPutRowB")){
+        config_map.insert("solutionB/nextPutRowB",config_map.value("solutionB/rowA").toInt());
+    }
+    if(!config_map.contains("solutionC/nextPutRowB")){
+        config_map.insert("solutionC/nextPutRowB",config_map.value("solutionC/rowA").toInt());
+    }
+
+    if(!config_map.contains("solutionA/nextPutColumnB")){
+        config_map.insert("solutionA/nextPutColumnB",0);
+    }
+    if(!config_map.contains("solutionB/nextPutColumnB")){
+        config_map.insert("solutionB/nextPutColumnB",0);
+    }
+    if(!config_map.contains("solutionC/nextPutColumnB")){
+        config_map.insert("solutionC/nextPutColumnB",0);
+    }
+
 
     if(!config_map.contains("ui/good_width")){
         config_map.insert("ui/good_width",90);

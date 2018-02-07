@@ -26,6 +26,10 @@ public:
 signals:
 
 public slots:
+    void takeA();
+
+    void takeB();
+
     //取走一个A货物
     void takeGoodA();
 
@@ -62,15 +66,23 @@ protected:
     QGroupBox * centergroup;
 
 private:
+    //下一个取货的位置
     int nextTakeRowA = -1;
     int nextTakeColumnA = -1;
     int nextTakeRowB = -1;
     int nextTakeColumnB = -1;
 
+    //下一个放货的位置
     int nextPutRowA = -1;
     int nextPutColumnA = -1;
     int nextPutRowB = -1;
     int nextPutColumnB = -1;
+
+    //正在取货的位置
+    int takingRowA = -1;
+    int takingColumnA = -1;
+    int takingRowB  = -1;
+    int takingColumnB = -1;
 
     int minA = 0;//下一个要取A货物的ID 用于计算下一个要取A的位置
     int minB = 0;//下一个要取B货物的ID 用于计算下一个要取B的位置
@@ -83,12 +95,19 @@ private:
     //获取下一个要去的A和B的坐标
     void updateNext();
 
+    void updateNextPutA();
+
+    void updateNextPutB();
+
     QLCDNumber *tAll;
     QLCDNumber *tA;
     QLCDNumber *tB;
 
     QyhClickLabel *takeABtn;
     QyhClickLabel *takeBBtn;
+
+    QPushButton *oldtakeABtn;
+    QPushButton *oldtakeBBtn;
 
     QTimer updateNumberTimer;
 
