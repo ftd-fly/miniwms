@@ -184,56 +184,60 @@ void ControlCenter::onTaskCheck()
 
 
     //获取下一个取货点
-    int station;
-    if(todoTasks.at(0).line == Task::LineA){
-        station = centerWidget->getNextAStation();
-    }else{
-        station = centerWidget->getNextBStation();
-    }
-    if(station == -1)return ;
-
-    //执行
-    if(agv->sendTask(todoTasks.at(0).id,todoTasks.at(0).line,station))
+    for(int i=0;i<todoTasks.length();++i)
     {
-        Task t = todoTasks.at(0);
-        t.station = station;
-        t.excuteAgv = agv->getId();
-        t.task_excuteTime = QDateTime::currentDateTime();
-        //更新任务执行时间/执行的车辆和站点
-        QString updateSql = "update agv_task set station=?,excuteAgv=?,task_excuteTime=?  where id=?";;
-        QStringList params;
-        params<<QString("%1").arg(t.station)
-             <<QString("%1").arg(t.excuteAgv)
-            <<t.task_excuteTime.toString(DATE_TIME_FORMAT)
-           <<QString("%1").arg(t.id);
+        auto t = todoTasks.at(i);
 
-        if(!g_sql->exeSql(updateSql,params)){
-            //更新数据库失败
-            QMessageBox mbox(QMessageBox::NoIcon,QStringLiteral("错误"),QStringLiteral("对新任务存库失败"),QMessageBox::Yes);
-            mbox.setStyleSheet(
-                        "QPushButton {"
-                        "font:30px;"
-                        "padding-left:100px;"
-                        "padding-right:100px;"
-                        "padding-top:40px;"
-                        "padding-bottom:40px;"
-                        "}"
-                        "QLabel { font:30px;}"
-                        );
-            mbox.setButtonText (QMessageBox::Yes,QStringLiteral("确 定"));
-            mbox.setButtonText (QMessageBox::No,QStringLiteral("取 消"));
-            mbox.exec();
-        }
-
-        doingTasks.append(t);
-        todoTasks.removeAt(0);
-
-        //开始执行，便将货物从UI界面中移除。
+        int station;
         if(t.line == Task::LineA){
-            centerWidget->takeGoodA();
+            station = centerWidget->getNextAStation();
+        }else{
+            station = centerWidget->getNextBStation();
         }
-        else{
-            centerWidget->takeGoodB();
+        if(station == -1)continue ;
+
+        if(agv->sendTask(t.id,t.line,station))
+        {
+            t.station = station;
+            t.excuteAgv = agv->getId();
+            t.task_excuteTime = QDateTime::currentDateTime();
+            //更新任务执行时间/执行的车辆和站点
+            QString updateSql = "update agv_task set station=?,excuteAgv=?,task_excuteTime=?  where id=?";;
+            QStringList params;
+            params<<QString("%1").arg(t.station)
+                 <<QString("%1").arg(t.excuteAgv)
+                <<t.task_excuteTime.toString(DATE_TIME_FORMAT)
+               <<QString("%1").arg(t.id);
+
+            if(!g_sql->exeSql(updateSql,params)){
+                //更新数据库失败
+                QMessageBox mbox(QMessageBox::NoIcon,QStringLiteral("错误"),QStringLiteral("对新任务存库失败"),QMessageBox::Yes);
+                mbox.setStyleSheet(
+                            "QPushButton {"
+                            "font:30px;"
+                            "padding-left:100px;"
+                            "padding-right:100px;"
+                            "padding-top:40px;"
+                            "padding-bottom:40px;"
+                            "}"
+                            "QLabel { font:30px;}"
+                            );
+                mbox.setButtonText (QMessageBox::Yes,QStringLiteral("确 定"));
+                mbox.setButtonText (QMessageBox::No,QStringLiteral("取 消"));
+                mbox.exec();
+            }
+
+            doingTasks.append(t);
+            todoTasks.removeAt(i);
+
+            //开始执行，便将货物从UI界面中移除。
+            if(t.line == Task::LineA){
+                centerWidget->takeGoodA();
+            }
+            else{
+                centerWidget->takeGoodB();
+            }
+            break;
         }
     }
 }
