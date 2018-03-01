@@ -49,6 +49,8 @@ private:
     int id;
     QString ip;
     int port;
+
+    bool isDoingContinue;
 };
 
 #endif // AGVCONNECTOR_H
