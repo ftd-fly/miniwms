@@ -262,32 +262,118 @@ void ControlCenter::onError()
 
 void ControlCenter::onTaskFinish(int taskId)
 {
-    for(int i=0;i<doingTasks.length();++i)
-    {
-        Task t = doingTasks.at(i);
-        if(t.id == taskId)
-        {
-            if(t.line == Task::LineA)
-            {
-                taskAFinish = true;
-                rf.lightOff(RADOI_FREQUENCY_ADDRESS_A);
-                centerWidget->finishA();
-            }else{
-                taskBFinish = true;
-                rf.lightOff(RADOI_FREQUENCY_ADDRESS_B);
-                centerWidget->finishB();
-            }
-            t.task_finishTime = QDateTime::currentDateTime();
-            doingTasks.removeAt(i);
-            //更新任务完成时间
-            QString updateSql = "update agv_task set task_finishTime=? where id=?";;
-            QStringList params;
-            params<<t.task_excuteTime.toString(DATE_TIME_FORMAT)
-                 <<QString("%1").arg(t.id);
+    if(taskId == 0)return ;//返回原点的任务完成了,什么也不用做
 
-            if(!g_sql->exeSql(updateSql,params))
-            {
-                QMessageBox mbox(QMessageBox::NoIcon,QStringLiteral("错误"),QStringLiteral("对任务数据库更新失败"),QMessageBox::Yes);
+    //1.找到完成的任务
+    Task finishTask;
+    foreach (auto t, doingTasks)
+    {
+        if(taskId == t.id){
+            finishTask = t;
+            break;
+        }
+    }
+    if(finishTask.id <0)return ;//未找到该任务
+
+    //2.修改任务、亮灯、界面状态
+    if(finishTask.line == Task::LineA)
+    {
+        taskAFinish = true;
+        rf.lightOff(RADOI_FREQUENCY_ADDRESS_A);
+        centerWidget->finishA();
+    }else{
+        taskBFinish = true;
+        rf.lightOff(RADOI_FREQUENCY_ADDRESS_B);
+        centerWidget->finishB();
+    }
+
+    //3.移除完成的任务并保存数据库
+    finishTask.task_finishTime = QDateTime::currentDateTime();
+    doingTasks.removeOne(finishTask);
+    QString updateSql = "update agv_task set task_finishTime=? where id=?";;
+    QStringList params;
+    params<<finishTask.task_excuteTime.toString(DATE_TIME_FORMAT)
+         <<QString("%1").arg(finishTask.id);
+    if(!g_sql->exeSql(updateSql,params))
+    {
+        QMessageBox mbox(QMessageBox::NoIcon,QStringLiteral("错误"),QStringLiteral("对任务数据库更新失败"),QMessageBox::Yes);
+        mbox.setStyleSheet(
+                    "QPushButton {"
+                    "font:30px;"
+                    "padding-left:100px;"
+                    "padding-right:100px;"
+                    "padding-top:40px;"
+                    "padding-bottom:40px;"
+                    "}"
+                    "QLabel { font:30px;}"
+                    );
+        mbox.setButtonText (QMessageBox::Yes,QStringLiteral("确 定"));
+        mbox.setButtonText (QMessageBox::No,QStringLiteral("取 消"));
+        mbox.exec();
+    }
+
+    //4.找到执行车辆,为后续车辆接下来是返回原点还是执行下一个任务做准备
+    AgvConnector *excuteAgv = NULL;
+    foreach (auto agv, agvs)
+    {
+        if(agv->getId() == finishTask.excuteAgv)
+        {
+            excuteAgv = agv;
+            break;
+        }
+    }
+    if(excuteAgv == NULL)return ;//未能找到执行车辆
+
+    //5.新增对下一个任务的判断：判断下一个任务是不是LineB。如果是，继续执行下一个任务，否则 回原点
+    Task nextTask;
+    foreach(auto tt, todoTasks) {
+        int station;
+        if(tt.line == Task::LineA){
+            station = centerWidget->getNextAStation();
+        }else{
+            station = centerWidget->getNextBStation();
+        }
+        if(station != -1)
+        {
+            nextTask = tt;
+            break;
+        }
+    }
+
+    if(nextTask.id <0 || nextTask.line == Task::LineA){
+        //5.0.没有下一个任务 或下一个任务是A任务
+        excuteAgv->goOrigin();
+    }else{
+        //5.1.执行下一个任务
+        int station;
+        if(nextTask.line == Task::LineA){
+            station = centerWidget->getNextAStation();
+        }else{
+            station = centerWidget->getNextBStation();
+        }
+        if(station == -1)
+        {
+            excuteAgv->goOrigin();//没有货物可取，那就返回原点
+            return ;
+        }
+
+        //5.2.执行
+        if(excuteAgv->sendTask(nextTask.id,nextTask.line,station,true))
+        {
+            //5.3.执行成功，设置任务状态
+            nextTask.station = station;
+            nextTask.excuteAgv = excuteAgv->getId();
+            nextTask.task_excuteTime = QDateTime::currentDateTime();
+            //5.4.更新任务执行时间/执行的车辆和站点
+            QString updateSql = "update agv_task set station=?,excuteAgv=?,task_excuteTime=?  where id=?";;
+            QStringList params;
+            params<<QString("%1").arg(nextTask.station)
+                 <<QString("%1").arg(nextTask.excuteAgv)
+                <<nextTask.task_excuteTime.toString(DATE_TIME_FORMAT)
+               <<QString("%1").arg(nextTask.id);
+            if(!g_sql->exeSql(updateSql,params)){
+                //更新数据库失败
+                QMessageBox mbox(QMessageBox::NoIcon,QStringLiteral("错误"),QStringLiteral("对新任务存库失败"),QMessageBox::Yes);
                 mbox.setStyleSheet(
                             "QPushButton {"
                             "font:30px;"
@@ -302,7 +388,20 @@ void ControlCenter::onTaskFinish(int taskId)
                 mbox.setButtonText (QMessageBox::No,QStringLiteral("取 消"));
                 mbox.exec();
             }
-            break;
+            doingTasks.append(nextTask);
+            todoTasks.removeOne(nextTask);
+
+            //5.5.将货物从UI界面中移除。
+            if(nextTask.line == Task::LineA){
+                centerWidget->takeGoodA();
+            }
+            else{
+                centerWidget->takeGoodB();
+            }
+        }else{
+            //执行失败，返回原点
+            excuteAgv->goOrigin();
         }
+
     }
 }

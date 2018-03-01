@@ -3,6 +3,7 @@
 #include <QJsonDocument>
 #include <QJsonArray>
 #include "global.h"
+#include <assert.h>
 
 AgvConnector::AgvConnector(QObject *parent) : QObject(parent),client(NULL),hasInit(false)
 {
@@ -98,16 +99,42 @@ void AgvConnector::processOneJson(QString json)
     }
 }
 
+bool AgvConnector::goOrigin()
+{
+    QString goal_name = "go_origin_wp";
+
+    QVariantMap msg;
+    msg.insert("goal_name", goal_name);
+    msg.insert("control", 1);
+    QJsonDocument msgJson = QJsonDocument::fromVariant(msg);
+    qDebug() << msgJson.toJson();
+
+    QVariantMap pub;
+    pub.insert("op", "publish");
+    pub.insert("topic", "/nav_ctrl");
+    pub.insert("msg", msgJson.toVariant());
+    QJsonDocument pubJson = QJsonDocument::fromVariant(pub);
+    qDebug() << pubJson.toJson();
+    if(!client->sendToServer(QString(pubJson.toJson())))return false;
+    taskId = 0;
+    //等待返回值？//协议中未给出返回值！直接认为是成功的
+    return true;
+}
+
 //从那条线上，运送到那个站点
-bool AgvConnector::sendTask(int _taskId, int line, int station)
+bool AgvConnector::sendTask(int _taskId, int line, int station, bool _continue)
 {
     QString goal_name;
-    if(line== Task::LineA){
-        goal_name = QString("cache_A_%1_%2").arg(1+station/column).arg(1+station%column);
+    if(!_continue){
+        if(line== Task::LineA){
+            goal_name = QString("cache_A_%1_%2").arg(1+station/column).arg(1+station%column);
+        }else{
+            goal_name = QString("cache_B_%1_%2").arg(1+station/column-rowA).arg(1+station%column);
+        }
     }else{
-        goal_name = QString("cache_B_%1_%2").arg(1+station/column-rowA).arg(1+station%column);
+        assert(line== Task::LineB);
+        goal_name = QString("continue_cache_B_%1_%2").arg(1+station/column).arg(1+station%column);
     }
-    //QString goal_name = QString("Line_%1ToCache_%2").arg(line).arg(station);
 
     QVariantMap msg;
     msg.insert("goal_name", goal_name);

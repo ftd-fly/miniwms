@@ -29,7 +29,10 @@ public:
         }
     }
     bool operator <(const Task &b){
-        return id<b.id;
+        return id < b.id;
+    }
+    bool operator ==(const Task &b){
+        return id == b.id;
     }
 
     int id;

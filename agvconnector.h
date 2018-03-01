@@ -24,7 +24,8 @@ public:
     void init(int _id, QString _ip, int _port);
     bool isconnect();
     bool isinit();
-    bool sendTask(int _taskId,int line,int station);
+    bool goOrigin();
+    bool sendTask(int _taskId,int line,int station,bool _continue = false);
     bool cancelTask(int line, int station);
     bool isIdle();
     int getId(){return id;}
