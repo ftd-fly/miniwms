@@ -88,12 +88,23 @@ void AgvConnector::processOneJson(QString json)
 
     if(result["msg"].toMap()["status"].toString().length()>0){
         status = result["msg"].toMap()["status"].toInt();
-        if(status == COMPLETED && lastStatus != status){
+        static QDateTime completeTime;//收到完成的时间
+        if(status == COMPLETED && lastStatus != status){//现在状态是完成状态 上一个状态不是完成状态，代表任务完成
+            completeTime = QDateTime::currentDateTime();
             emit finish(taskId);
         }else if(status == ERROR && lastStatus != status){
             emit error();
-        }else if(status == IDLING && lastStatus != status){
-            emit cancel(taskId);
+        }else if(status == IDLING && lastStatus != status){//如果是IDLING，并且上一个状态是 完成状态，也表示完成，但是应该是已经处理过了完成状态
+            if(completeTime.isValid()){
+                if(QDateTime::currentDateTime().msecsTo(completeTime)<=2000){
+                    //距离上次发送 完成 时差小于2秒，认为是 完成后变成IDLING
+                    //不作处理
+                }else{
+                    emit cancel(taskId);
+                }
+            }else{
+                emit cancel(taskId);
+            }
         }
         lastStatus = status;
     }
@@ -133,7 +144,7 @@ bool AgvConnector::sendTask(int _taskId, int line, int station, bool _continue)
         }
     }else{
         assert(line== Task::LineB);
-        goal_name = QString("continue_cache_B_%1_%2").arg(1+station/column).arg(1+station%column);
+        goal_name = QString("continue_cache_B_%1_%2").arg(1+station/column-rowA).arg(1+station%column);
     }
 
     QVariantMap msg;

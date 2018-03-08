@@ -30,6 +30,8 @@ public slots:
 
     void takeB();
 
+//    void continueB();
+
     //取走一个A货物
     void takeGoodA();
 
@@ -113,6 +115,8 @@ private:
 
     QPushButton *cancelABtn;
     QPushButton *cancelBBtn;
+
+//    QPushButton *continueBtn;
 };
 
 #endif // CENTERWIDGET_H

@@ -49,11 +49,14 @@ void CenterWidget::init()
     cancelABtn = new QPushButton(QStringLiteral("取消A任务"));
     cancelBBtn = new QPushButton(QStringLiteral("取消B任务"));
 
+//    continueBtn = new QPushButton(QStringLiteral("继续任务【仅供测试】"));
+
     connect(cancelABtn,SIGNAL(clicked(bool)),this,SLOT(cancelA()));
     connect(cancelBBtn,SIGNAL(clicked(bool)),this,SLOT(cancelB()));
 
     connect(oldtakeABtn,SIGNAL(clicked(bool)),this,SLOT(takeA()));
     connect(oldtakeBBtn,SIGNAL(clicked(bool)),this,SLOT(takeB()));
+//    connect(continueBtn,SIGNAL(clicked(bool)),this,SLOT(continueB()));
 
     connect(clearBtn,SIGNAL(clicked(bool)),this,SLOT(clear()));
 
@@ -77,6 +80,8 @@ void CenterWidget::init()
     testTwoBtnHlayout->addWidget(oldtakeABtn);
     testTwoBtnHlayout->addSpacing(100);
     testTwoBtnHlayout->addWidget(oldtakeBBtn);
+//    testTwoBtnHlayout->addSpacing(100);
+//    testTwoBtnHlayout->addWidget(continueBtn);
 
     testTwoBtnHlayout->addStretch(1);
 
@@ -777,6 +782,11 @@ void CenterWidget::takeB()
 {
     controlCenter.onButtn(RADOI_FREQUENCY_ADDRESS_B);
 }
+
+//void CenterWidget::continueB()
+//{
+//    controlCenter.testContinue();// excuteAgv->sendTask(nextTask.id,nextTask.line,station,true)
+//}
 
 void CenterWidget::removeGood(int remove_row,int remove_column)
 {
