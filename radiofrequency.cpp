@@ -13,11 +13,19 @@ RadioFrequency::RadioFrequency(QObject *parent) : QObject(parent)
 
     sendTimer.setInterval(50);
     connect(&sendTimer,&QTimer::timeout,this,&RadioFrequency::onSend);
+
+    lightTimer.setInterval(300);
+    connect(&lightTimer,&QTimer::timeout,this,&RadioFrequency::onLightTimer);
+
+    //灯的address和 是否亮起
+    address_on_off[RADOI_FREQUENCY_ADDRESS_A] = false;
+    address_on_off[RADOI_FREQUENCY_ADDRESS_B] = false;
 }
 
 RadioFrequency::~RadioFrequency()
 {
     serial->close();
+    delete serial;
 }
 
 bool RadioFrequency::init()
@@ -81,6 +89,7 @@ bool RadioFrequency::init()
     }
     sendTimer.start();
     queryTimer.start();
+    lightTimer.start();
     //成功
     return true;
 }
@@ -168,23 +177,36 @@ void RadioFrequency::onRead()
 
 void RadioFrequency::lightOn(int address)
 {
-    const unsigned char str[] = {(address&0xff),  0x10, 0x00, 0x02, 0x00, 0x01, 0x02,0x03,0xff,};
-    QByteArray sendCmd(reinterpret_cast<const char*>(&str[0]),std::extent<decltype(str)>::value);
-
-    qint16 crc = checksum(sendCmd);
-    sendCmd += (char )(crc>>8 & 0xff);
-    sendCmd += (char )(crc & 0xff);
-    sendQueue.enqueue(qMakePair(SEND_TYPE_LIGHT,sendCmd));
+    address_on_off[address] = true;
 }
 
 void RadioFrequency::lightOff(int address)
 {
-    const unsigned char str[] = {(address&0xff),  0x10, 0x00, 0x02, 0x00, 0x01, 0x02,0x00,0x00,};
-    QByteArray sendCmd(reinterpret_cast<const char*>(&str[0]),std::extent<decltype(str)>::value);
-    qint16 crc = checksum(sendCmd);
-    sendCmd += (char )(crc>>8 & 0xff);
-    sendCmd += (char )(crc & 0xff);
-    sendQueue.enqueue(qMakePair(SEND_TYPE_LIGHT, sendCmd));
+    address_on_off[address] = false;
+}
+
+void RadioFrequency::onLightTimer()
+{
+    unsigned char light_on[] = {0xff,  0x10, 0x00, 0x02, 0x00, 0x01, 0x02,0x03,0xff,};
+    unsigned char light_off[] = {0xff,  0x10, 0x00, 0x02, 0x00, 0x01, 0x02,0x00,0x00,};
+    for(auto itr = address_on_off.begin();itr!=address_on_off.end();++itr){
+        if(itr.value()){
+            light_on[0] = itr.key() & 0xff;
+            QByteArray sendCmd(reinterpret_cast<const char*>(&light_on[0]),std::extent<decltype(light_on)>::value);
+            qint16 crc = checksum(sendCmd);
+            sendCmd += (char )(crc>>8 & 0xff);
+            sendCmd += (char )(crc & 0xff);
+            sendQueue.enqueue(qMakePair(SEND_TYPE_LIGHT, sendCmd));
+        }else{
+            light_off[0] = itr.key() & 0xff;
+            QByteArray sendCmd(reinterpret_cast<const char*>(&light_off[0]),std::extent<decltype(light_off)>::value);
+            qint16 crc = checksum(sendCmd);
+            sendCmd += (char )(crc>>8 & 0xff);
+            sendCmd += (char )(crc & 0xff);
+            sendQueue.enqueue(qMakePair(SEND_TYPE_LIGHT, sendCmd));
+        }
+    }
+
 }
 
 void RadioFrequency::onSend()

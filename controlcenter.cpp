@@ -30,7 +30,7 @@ bool ControlCenter::init()
             agv->init(id,ip,port);
             connect(agv,SIGNAL(finish(int)),this,SLOT(onTaskFinish(int)));
             connect(agv,SIGNAL(error()),this,SLOT(onError()));
-            connect(agv,SIGNAL(cancel(int)),this,SLOT(onTaskFinish()));
+            connect(agv,SIGNAL(cancel(int)),this,SLOT(onTaskFinish(int)));
             agvs.push_back(agv);
         }else{
             qDebug() << "agv agv_ip_"<<id<<" config error!";
@@ -82,16 +82,6 @@ void ControlCenter::cancelTask(int aOrB)
         }
     }
 }
-
-//void ControlCenter::testContinue()
-//{
-//    static int randId = 100000;
-//    int tempRowB = 0;
-//    int tempColumnB = 1;
-//    if(agvs.length()>0)
-//        agvs[0]->sendTask(++randId,Task::LineB,(tempRowB+rowA)*column+tempColumnB,true);
-//}
-
 
 void ControlCenter::recover()
 {
