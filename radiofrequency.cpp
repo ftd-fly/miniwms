@@ -11,10 +11,10 @@ RadioFrequency::RadioFrequency(QObject *parent) : QObject(parent)
     queryTimer.setInterval(150);
     connect(&queryTimer,&QTimer::timeout,this,&RadioFrequency::queryStatus);
 
-    sendTimer.setInterval(50);
+    sendTimer.setInterval(100);
     connect(&sendTimer,&QTimer::timeout,this,&RadioFrequency::onSend);
 
-    lightTimer.setInterval(300);
+    lightTimer.setInterval(200);
     connect(&lightTimer,&QTimer::timeout,this,&RadioFrequency::onLightTimer);
 
     //灯的address和 是否亮起
@@ -130,7 +130,7 @@ void RadioFrequency::onRead()
                 if(status==0x03){
 
                     ++APushTime;
-                    if(APushTime>=3)
+                    if(APushTime>=2)
                     {
                         qDebug()<<"A PUSH!";
                         //按钮被按下
@@ -149,7 +149,7 @@ void RadioFrequency::onRead()
                 if(status==0x03)
                 {
                     ++BPushTime;
-                    if(BPushTime>=3){
+                    if(BPushTime>=2){
                         qDebug("B PUSH!");
                         //按钮被按下
                         //亮灯

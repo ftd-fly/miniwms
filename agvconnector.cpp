@@ -112,24 +112,26 @@ void AgvConnector::processOneJson(QString json)
 
 bool AgvConnector::goOrigin()
 {
-    QString goal_name = "go_origin_wp";
-
-    QVariantMap msg;
-    msg.insert("goal_name", goal_name);
-    msg.insert("control", 1);
-    QJsonDocument msgJson = QJsonDocument::fromVariant(msg);
-    qDebug() << msgJson.toJson();
-
-    QVariantMap pub;
-    pub.insert("op", "publish");
-    pub.insert("topic", "/nav_ctrl");
-    pub.insert("msg", msgJson.toVariant());
-    QJsonDocument pubJson = QJsonDocument::fromVariant(pub);
-    qDebug() << pubJson.toJson();
-    if(!client->sendToServer(QString(pubJson.toJson())))return false;
     taskId = 0;
-    //等待返回值？//协议中未给出返回值！直接认为是成功的
     return true;
+//    QString goal_name = "go_origin_wp";
+
+//    QVariantMap msg;
+//    msg.insert("goal_name", goal_name);
+//    msg.insert("control", 1);
+//    QJsonDocument msgJson = QJsonDocument::fromVariant(msg);
+//    qDebug() << msgJson.toJson();
+
+//    QVariantMap pub;
+//    pub.insert("op", "publish");
+//    pub.insert("topic", "/nav_ctrl");
+//    pub.insert("msg", msgJson.toVariant());
+//    QJsonDocument pubJson = QJsonDocument::fromVariant(pub);
+//    qDebug() << pubJson.toJson();
+//    if(!client->sendToServer(QString(pubJson.toJson())))return false;
+//    taskId = 0;
+//    //等待返回值？//协议中未给出返回值！直接认为是成功的
+//    return true;
 }
 
 //从那条线上，运送到那个站点
