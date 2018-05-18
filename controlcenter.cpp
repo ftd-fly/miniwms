@@ -10,10 +10,12 @@ ControlCenter::ControlCenter(QObject *parent) : QObject(parent),
 
 bool ControlCenter::init()
 {
+    rf = new SerialThread();
     //初始化串口
-    connect(&rf,SIGNAL(buttonClick(int)),this,SLOT(onButtn(int)));
-    if(!rf.init())
-        return false;
+    connect(rf,SIGNAL(buttonClick(int)),this,SLOT(onButtn(int)));
+    connect(this,SIGNAL(sig_light_on(int)),rf,SLOT(lightOn(int)));
+    connect(this,SIGNAL(sig_light_off(int)),rf,SLOT(lightOff(int)));
+    rf->start();
 
     //初始化车辆
     int quantity = configure.getValue("agv/quantity").toInt();
@@ -54,7 +56,8 @@ void ControlCenter::cancelTask(int aOrB)
         {
             if(doingTasks.at(i).line == Task::LineA){
                 Task t = doingTasks.at(i);
-                rf.lightOff(RADOI_FREQUENCY_ADDRESS_A);
+                emit sig_light_off(RADOI_FREQUENCY_ADDRESS_A);
+                //rf.lightOff(RADOI_FREQUENCY_ADDRESS_A);
                 foreach (auto a, agvs) {
                     if(a->getId() == t.excuteAgv){
                         a->cancelTask(t.line,t.station);
@@ -71,7 +74,8 @@ void ControlCenter::cancelTask(int aOrB)
             if(doingTasks.at(i).line == Task::LineB)
             {
                 Task t = doingTasks.at(i);
-                rf.lightOff(RADOI_FREQUENCY_ADDRESS_B);
+                emit sig_light_off(RADOI_FREQUENCY_ADDRESS_B);
+                //rf.lightOff(RADOI_FREQUENCY_ADDRESS_B);
                 foreach (auto a, agvs) {
                     if(a->getId() == t.excuteAgv){
                         a->cancelTask(t.line,t.station);
@@ -125,7 +129,8 @@ void ControlCenter::onButtn(int address)
             mbox.exec();
 
             taskAFinish = true;
-            rf.lightOff(RADOI_FREQUENCY_ADDRESS_A);
+            emit sig_light_off(RADOI_FREQUENCY_ADDRESS_A);
+            //rf.lightOff(RADOI_FREQUENCY_ADDRESS_A);
         }
     }else if(address == RADOI_FREQUENCY_ADDRESS_B && taskBFinish)
     {
@@ -161,7 +166,8 @@ void ControlCenter::onButtn(int address)
             mbox.setButtonText (QMessageBox::No,QStringLiteral("取 消"));
             mbox.exec();
             taskBFinish = false;
-            rf.lightOff(RADOI_FREQUENCY_ADDRESS_B);
+            emit sig_light_off(RADOI_FREQUENCY_ADDRESS_B);
+            //rf.lightOff(RADOI_FREQUENCY_ADDRESS_B);
         }
     }
 }
@@ -279,11 +285,13 @@ void ControlCenter::onTaskFinish(int taskId)
     if(finishTask.line == Task::LineA)
     {
         taskAFinish = true;
-        rf.lightOff(RADOI_FREQUENCY_ADDRESS_A);
+        emit sig_light_off(RADOI_FREQUENCY_ADDRESS_A);
+        //rf.lightOff(RADOI_FREQUENCY_ADDRESS_A);
         centerWidget->finishA();
     }else{
         taskBFinish = true;
-        rf.lightOff(RADOI_FREQUENCY_ADDRESS_B);
+        emit sig_light_off(RADOI_FREQUENCY_ADDRESS_B);
+        //rf.lightOff(RADOI_FREQUENCY_ADDRESS_B);
         centerWidget->finishB();
     }
 

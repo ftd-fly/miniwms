@@ -2,7 +2,7 @@
 #define CONTROLCENTER_H
 
 #include <QObject>
-#include "radiofrequency.h"
+#include "serialthread.h"
 #include "agvconnector.h"
 #include "task.h"
 
@@ -17,14 +17,15 @@ public:
     void recover();
 //    void testContinue();
 signals:
-
+    void sig_light_on(int address);
+    void sig_light_off(int address);
 public slots:
     void onButtn(int address);
     void onTaskCheck();
     void onTaskFinish(int taskId);
     void onError();
 private:
-    RadioFrequency rf;
+    SerialThread *rf;
     bool taskAFinish;
     bool taskBFinish;
     QList<Task> todoTasks;
