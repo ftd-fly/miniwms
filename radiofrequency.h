@@ -10,6 +10,9 @@
 #define RADOI_FREQUENCY_ADDRESS_A  0x08
 #define RADOI_FREQUENCY_ADDRESS_B  0x07
 
+#define RADOI_FREQUENCY_ADDRESS_C  0x81
+#define RADOI_FREQUENCY_ADDRESS_D  0x82
+
 class RadioFrequency : public QObject
 {
     Q_OBJECT
@@ -38,8 +41,8 @@ private:
     } SEND_TYPE;
     QQueue< QPair<SEND_TYPE,QByteArray> > sendQueue;
     QMap<int,bool> address_on_off;//灯的地址和灯的状态是否亮起
-    volatile bool queryOk;
-    volatile bool lightOk;
+//    volatile bool queryOk;
+//    volatile bool lightOk;
 };
 
 #endif // RADIOFREQUENCY_H
