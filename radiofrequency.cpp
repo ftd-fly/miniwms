@@ -20,6 +20,8 @@ RadioFrequency::RadioFrequency(QObject *parent) : QObject(parent)
     //灯的address和 是否亮起
     address_on_off[RADOI_FREQUENCY_ADDRESS_A] = false;
     address_on_off[RADOI_FREQUENCY_ADDRESS_B] = false;
+    address_on_off[RADOI_FREQUENCY_ADDRESS_C] = false;
+    address_on_off[RADOI_FREQUENCY_ADDRESS_D] = false;
 }
 
 RadioFrequency::~RadioFrequency()
