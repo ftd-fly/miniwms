@@ -3,9 +3,9 @@
 
 #include <QObject>
 #include <QTimer>
-#include <QSerialPort>
 #include <QQueue>
 #include <QMap>
+#include "serialthread.h"
 
 #define RADOI_FREQUENCY_ADDRESS_A  0x08
 #define RADOI_FREQUENCY_ADDRESS_B  0x07
@@ -22,16 +22,17 @@ public:
     bool init();
 signals:
     void buttonClick(int address);
+    void sig_wirteSerial(const QByteArray &b);
 public slots:
     //做一个定时器发送，防止黏包现象。可能对方并没有处理黏包
     void onSend();
     void onLightTimer();
     void queryStatus();
-    void onRead();
+    void onRead(const QByteArray &qba);
     void lightOn(int address);
     void lightOff(int address);
 private:
-    QSerialPort *serial;
+    SerialThread *serial;
     QTimer queryTimer;
     QTimer sendTimer;
     QTimer lightTimer;

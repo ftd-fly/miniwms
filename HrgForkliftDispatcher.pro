@@ -40,7 +40,8 @@ SOURCES += \
     radiofrequency.cpp \
     crc16.cpp \
     ui/centerwidget.cpp \
-    ui/qyhclicklabel.cpp
+    ui/qyhclicklabel.cpp \
+    serialthread.cpp
 
 HEADERS += \
         mainwindow.h \
@@ -59,7 +60,8 @@ HEADERS += \
     crc16.h \
     task.h \
     ui/centerwidget.h \
-    ui/qyhclicklabel.h
+    ui/qyhclicklabel.h \
+    serialthread.h
 
 
 RESOURCES += \

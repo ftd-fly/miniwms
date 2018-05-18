@@ -5,9 +5,6 @@
 
 RadioFrequency::RadioFrequency(QObject *parent) : QObject(parent)
 {
-    serial = new QSerialPort(this);
-    connect(serial, &QSerialPort::readyRead,this, &RadioFrequency::onRead);
-
     queryTimer.setInterval(150);
     connect(&queryTimer,&QTimer::timeout,this,&RadioFrequency::queryStatus);
 
@@ -26,15 +23,12 @@ RadioFrequency::RadioFrequency(QObject *parent) : QObject(parent)
 
 RadioFrequency::~RadioFrequency()
 {
-    serial->close();
-    delete serial;
 }
 
 bool RadioFrequency::init()
 {
     //从配置文件中读取配置
-    //COM口
-    serial->setPortName(configure.getValue("RadioFrequency/COM").toString());
+    QString portName = configure.getValue("RadioFrequency/COM").toString();
 
     //奇偶校验
     int p = configure.getValue("RadioFrequency/Parity").toInt();
@@ -45,10 +39,7 @@ bool RadioFrequency::init()
     if(p==4)parity = QSerialPort::SpaceParity;
     if(p==5)parity = QSerialPort::MarkParity;
 
-    serial->setParity(parity);
-
-    //波特率
-    serial->setBaudRate(configure.getValue("RadioFrequency/BaudRate").toInt());
+    int buadRate = configure.getValue("RadioFrequency/BaudRate").toInt();
 
     //数据位
     int d = configure.getValue("RadioFrequency/DataBits").toInt();
@@ -57,38 +48,23 @@ bool RadioFrequency::init()
     if(d==6)dataBits = QSerialPort::Data6;
     if(d==7)dataBits = QSerialPort::Data7;
     if(d==8)dataBits = QSerialPort::Data8;
-    serial->setDataBits(dataBits);
 
-    //停止位
     int s = configure.getValue("RadioFrequency/StopBits").toInt();
     QSerialPort::StopBits stopBits = QSerialPort::UnknownStopBits;
     if(s==1)stopBits = QSerialPort::OneStop;
     if(s==2)stopBits = QSerialPort::TwoStop;
     if(s==3)stopBits = QSerialPort::OneAndHalfStop;
 
-    serial->setStopBits(stopBits);
+    serial = new SerialThread(portName,
+                              parity,
+                              buadRate,
+                              dataBits,
+                              stopBits
+                              );
 
-    if(!serial->open(QIODevice::ReadWrite))
-    {
-        qDebug()<<"serial open fail!"<< serial->errorString();
+    connect(serial, &SerialThread::sig_readData,this, &RadioFrequency::onRead);
+    connect(this,SIGNAL(sig_wirteSerial(QByteArray)),serial,SLOT(slot_sendData(QByteArray)));
 
-        QMessageBox mbox(QMessageBox::NoIcon,QStringLiteral("错误"),QStringLiteral("无法打开串口"),QMessageBox::Yes);
-        mbox.setStyleSheet(
-                    "QPushButton {"
-                    "font:30px;"
-                    "padding-left:100px;"
-                    "padding-right:100px;"
-                    "padding-top:40px;"
-                    "padding-bottom:40px;"
-                    "}"
-                    "QLabel { font:30px;}"
-                    );
-        mbox.setButtonText (QMessageBox::Yes,QStringLiteral("确 定"));
-        mbox.setButtonText (QMessageBox::No,QStringLiteral("取 消"));
-        mbox.exec();
-
-        return false;
-    }
     sendTimer.start();
     queryTimer.start();
     lightTimer.start();
@@ -97,12 +73,12 @@ bool RadioFrequency::init()
 }
 
 
-void RadioFrequency::onRead()
+void RadioFrequency::onRead(const QByteArray& qba)
 {
     static QByteArray buffer;
     static int APushTime = 0;//计数 A按下的时间
     static int BPushTime = 0;//计数 A按下的时间
-    buffer += serial->readAll();
+    buffer += qba;
     while(true)
     {
         int indexA = buffer.indexOf(RADOI_FREQUENCY_ADDRESS_A);
@@ -126,7 +102,7 @@ void RadioFrequency::onRead()
             QByteArray statusMsg = buffer.mid(index,7);
             int status = statusMsg.at(3);
             if(statusMsg.at(0) == RADOI_FREQUENCY_ADDRESS_A ){
-//                queryOk  = true;
+                //                queryOk  = true;
                 if(status==0x03){
 
                     ++APushTime;
@@ -145,7 +121,7 @@ void RadioFrequency::onRead()
                     APushTime = 0;
                 }
             }else if(statusMsg.at(0) == RADOI_FREQUENCY_ADDRESS_B ){
-//                queryOk  = true;
+                //                queryOk  = true;
                 if(status==0x03)
                 {
                     ++BPushTime;
@@ -170,8 +146,8 @@ void RadioFrequency::onRead()
             if(index+8>=buffer.length())return ;
             //长度为8
             QByteArray setLightMsg = buffer.mid(index,8);
-//            //这里其实分不清，是light的开还是关[并没有标志]
-//            lightOk = true;
+            //            //这里其实分不清，是light的开还是关[并没有标志]
+            //            lightOk = true;
             buffer = buffer.right(buffer.length()-index-8);
         }
     }
@@ -223,48 +199,49 @@ void RadioFrequency::onSend()
     if(sendQueue.length()>0)
     {
         QPair<SEND_TYPE,QByteArray> sendData = sendQueue.dequeue();
-        if(serial->isOpen() && serial->isWritable())
+
+        if(sendData.first == SEND_TYPE_QUERY)
         {
-            if(sendData.first == SEND_TYPE_QUERY)
-            {
-                serial->write(sendData.second);
-//                int sendTimes = 0;
-//                while(true){
-//                    queryOk = false;
-//                    serial->write(sendData.second);
-//                    ++sendTimes;
-//                    int t = 0;
-//                    while(true)
-//                    {
-//                        QyhSleep(20);
-//                        ++t;
-//                        if(queryOk)break;//发送OK了
-//                        if(t>=10)break;//等待超时了[20ms*10 = 200ms]
-//                    }
-//                    if(queryOk)break;
-//                    if(sendTimes>=4)break;//发送3次[200ms *3 = 600ms]都没有成功，那就算了
-//                }
-            }else if(sendData.first == SEND_TYPE_LIGHT)
-            {
-                serial->write(sendData.second);
-//                int sendTimes = 0;
-//                while(true){
-//                    lightOk = false;
-//                    serial->write(sendData.second);
-//                    ++sendTimes;
-//                    int t = 0;
-//                    while(true)
-//                    {
-//                        QyhSleep(20);
-//                        ++t;
-//                        if(lightOk)break;//发送OK了
-//                        if(t>=10)break;//等待超时了[20ms*10 = 200ms]
-//                    }
-//                    if(lightOk)break;
-//                    if(sendTimes>=4)break;//发送3次都没有成功，那就算了
-//                }
-            }
+            emit sig_wirteSerial(sendData.second);
+            //                serial->write(sendData.second);
+            //                int sendTimes = 0;
+            //                while(true){
+            //                    queryOk = false;
+            //                    serial->write(sendData.second);
+            //                    ++sendTimes;
+            //                    int t = 0;
+            //                    while(true)
+            //                    {
+            //                        QyhSleep(20);
+            //                        ++t;
+            //                        if(queryOk)break;//发送OK了
+            //                        if(t>=10)break;//等待超时了[20ms*10 = 200ms]
+            //                    }
+            //                    if(queryOk)break;
+            //                    if(sendTimes>=4)break;//发送3次[200ms *3 = 600ms]都没有成功，那就算了
+            //                }
+        }else if(sendData.first == SEND_TYPE_LIGHT)
+        {
+            emit sig_wirteSerial(sendData.second);
+            //serial->write(sendData.second);
+            //                int sendTimes = 0;
+            //                while(true){
+            //                    lightOk = false;
+            //                    serial->write(sendData.second);
+            //                    ++sendTimes;
+            //                    int t = 0;
+            //                    while(true)
+            //                    {
+            //                        QyhSleep(20);
+            //                        ++t;
+            //                        if(lightOk)break;//发送OK了
+            //                        if(t>=10)break;//等待超时了[20ms*10 = 200ms]
+            //                    }
+            //                    if(lightOk)break;
+            //                    if(sendTimes>=4)break;//发送3次都没有成功，那就算了
+            //                }
         }
+
     }
 }
 
